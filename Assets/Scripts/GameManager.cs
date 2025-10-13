@@ -4,11 +4,18 @@ using System.Collections;
 
 public class GameManager : MonoBehaviour
 {
+
+    //debugging key commands
+    //p to reset and start new round
+    //y enable building mode
+
     [Header("References")]
     public Player player1;
     public Player player2;
     public CloneRecorder cloneRecorder;
     public TextMeshProUGUI roundText;
+    public Cursor player1Cursor;
+    public Cursor player2Cursor;
 
     [Header("Spawn Positions")]
     public Transform player1SpawnPoint;
@@ -17,9 +24,13 @@ public class GameManager : MonoBehaviour
     [Header("Settings")]
     [Tooltip("Delay between each clone spawn")]
     public float cloneSpawnDelay = 0.5f;
+    [Tooltip("Delay before respawning clones in building mode")]
+    public float buildingModeLoopDelay = 2f;
 
     private int roundCounter = 0;
     private bool isResetting = false;
+    private bool isBuildingMode = false;
+    private Coroutine buildingModeCoroutine;
 
     void Start()
     {
@@ -59,10 +70,16 @@ public class GameManager : MonoBehaviour
 
     void Update()
     {
-        // Press K to reset and start new round
-        if (Input.GetKeyDown(KeyCode.P) && !isResetting)
+        // Press P to reset and start new round
+        if (Input.GetKeyDown(KeyCode.P) && !isResetting && !isBuildingMode)
         {
             StartCoroutine(ResetAndStartNewRound());
+        }
+        
+        // Press Y to toggle building mode
+        if (Input.GetKeyDown(KeyCode.Y))
+        {
+            ToggleBuildingMode();
         }
     }
 
@@ -232,6 +249,186 @@ public class GameManager : MonoBehaviour
             if (spriteRenderer != null)
             {
                 spriteRenderer.enabled = visible;
+            }
+        }
+    }
+
+    void ToggleBuildingMode()
+    {
+        isBuildingMode = !isBuildingMode;
+
+        if (isBuildingMode)
+        {
+            // Entering building mode
+            // Disable players
+            if (player1 != null)
+            {
+                player1.enabled = false;
+                SetPlayerVisibility(player1, false);
+                SetPlayerPhysics(player1, false);
+            }
+
+            if (player2 != null)
+            {
+                player2.enabled = false;
+                SetPlayerVisibility(player2, false);
+                SetPlayerPhysics(player2, false);
+            }
+
+            // Enable cursors
+            if (player1Cursor != null)
+            {
+                player1Cursor.EnableCursor();
+            }
+
+            if (player2Cursor != null)
+            {
+                player2Cursor.EnableCursor();
+            }
+
+            // Start looping clone playback
+            buildingModeCoroutine = StartCoroutine(BuildingModeCloneLoop());
+        }
+        else
+        {
+            // Exiting building mode
+            // Stop the looping coroutine
+            if (buildingModeCoroutine != null)
+            {
+                StopCoroutine(buildingModeCoroutine);
+                buildingModeCoroutine = null;
+            }
+
+            // Hide all clones
+            if (cloneRecorder != null)
+            {
+                foreach (Clone clone in cloneRecorder.player1Clones)
+                {
+                    if (clone != null)
+                    {
+                        SetCloneVisibility(clone, false);
+                        clone.ResetToStartPosition();
+                    }
+                }
+
+                foreach (Clone clone in cloneRecorder.player2Clones)
+                {
+                    if (clone != null)
+                    {
+                        SetCloneVisibility(clone, false);
+                        clone.ResetToStartPosition();
+                    }
+                }
+            }
+
+            // Disable cursors
+            if (player1Cursor != null)
+            {
+                player1Cursor.DisableCursor();
+            }
+
+            if (player2Cursor != null)
+            {
+                player2Cursor.DisableCursor();
+            }
+
+            // Enable players
+            if (player1 != null)
+            {
+                SetPlayerVisibility(player1, true);
+                SetPlayerPhysics(player1, true);
+                player1.enabled = true;
+            }
+
+            if (player2 != null)
+            {
+                SetPlayerVisibility(player2, true);
+                SetPlayerPhysics(player2, true);
+                player2.enabled = true;
+            }
+        }
+    }
+
+    IEnumerator BuildingModeCloneLoop()
+    {
+        while (isBuildingMode)
+        {
+            // Hide and reset all clones first
+            if (cloneRecorder != null)
+            {
+                foreach (Clone clone in cloneRecorder.player1Clones)
+                {
+                    if (clone != null)
+                    {
+                        SetCloneVisibility(clone, false);
+                        clone.ResetToStartPosition();
+                    }
+                }
+
+                foreach (Clone clone in cloneRecorder.player2Clones)
+                {
+                    if (clone != null)
+                    {
+                        SetCloneVisibility(clone, false);
+                        clone.ResetToStartPosition();
+                    }
+                }
+
+                // Stagger clone spawns from oldest to newest (both players at the same time)
+                int maxClones = Mathf.Max(cloneRecorder.player1Clones.Count, cloneRecorder.player2Clones.Count);
+
+                // Spawn clones from oldest to newest for both players simultaneously
+                for (int i = maxClones - 1; i >= 0; i--)
+                {
+                    // Spawn Player 1 clone if it exists at this index
+                    if (i < cloneRecorder.player1Clones.Count)
+                    {
+                        Clone clone1 = cloneRecorder.player1Clones[i];
+                        if (clone1 != null)
+                        {
+                            clone1.PlayRecordedPath();
+                        }
+                    }
+
+                    // Spawn Player 2 clone if it exists at this index
+                    if (i < cloneRecorder.player2Clones.Count)
+                    {
+                        Clone clone2 = cloneRecorder.player2Clones[i];
+                        if (clone2 != null)
+                        {
+                            clone2.PlayRecordedPath();
+                        }
+                    }
+
+                    // Wait before spawning next set of clones
+                    yield return new WaitForSeconds(cloneSpawnDelay);
+                }
+
+                // Calculate the longest recording duration
+                float maxDuration = 0f;
+                foreach (Clone clone in cloneRecorder.player1Clones)
+                {
+                    if (clone != null && clone.recordedPath != null)
+                    {
+                        float duration = (clone.recordedPath.Length * clone.framesBeforeNextPosition) / (Application.targetFrameRate * clone.playbackSpeed);
+                        maxDuration = Mathf.Max(maxDuration, duration);
+                    }
+                }
+
+                foreach (Clone clone in cloneRecorder.player2Clones)
+                {
+                    if (clone != null && clone.recordedPath != null)
+                    {
+                        float duration = (clone.recordedPath.Length * clone.framesBeforeNextPosition) / (Application.targetFrameRate * clone.playbackSpeed);
+                        maxDuration = Mathf.Max(maxDuration, duration);
+                    }
+                }
+
+                // Wait for all clones to finish
+                yield return new WaitForSeconds(maxDuration);
+
+                // Wait before looping again
+                yield return new WaitForSeconds(buildingModeLoopDelay);
             }
         }
     }
