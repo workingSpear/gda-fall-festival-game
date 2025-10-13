@@ -43,7 +43,7 @@ SpriteRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2055729744138955338}
-  m_Enabled: 0
+  m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
   m_DynamicOccludee: 1
@@ -155,7 +155,7 @@ Rigidbody2D:
   m_Mass: 1
   m_LinearDamping: 0
   m_AngularDamping: 0.05
-  m_GravityScale: 1
+  m_GravityScale: 0
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2
@@ -184,6 +184,7 @@ MonoBehaviour:
   playbackSpeed: 1
   serialNumber: 0
   spriteRenderer: {fileID: 8160529691683580892}
+  rb: {fileID: 3322098961998931059}
 --- !u!1 &7552506681297967486
 GameObject:
   m_ObjectHideFlags: 0

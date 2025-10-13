@@ -27,10 +27,17 @@ public class GameManager : MonoBehaviour
     [Tooltip("Delay before respawning clones in building mode")]
     public float buildingModeLoopDelay = 2f;
 
+    [Header("Building Mode")]
+    [Tooltip("Block prefab to place in building mode")]
+    public GameObject currentBlock;
+    public GameObject buildingModeUI;
+
     private int roundCounter = 0;
     private bool isResetting = false;
     private bool isBuildingMode = false;
     private Coroutine buildingModeCoroutine;
+    private bool player1HasPlacedBlock = false;
+    private bool player2HasPlacedBlock = false;
 
     void Start()
     {
@@ -81,9 +88,25 @@ public class GameManager : MonoBehaviour
         {
             ToggleBuildingMode();
         }
+
+        // Building mode block placement
+        if (isBuildingMode)
+        {
+            // Player 1: Press Q to place block
+            if (Input.GetKeyDown(KeyCode.Q) && !player1HasPlacedBlock && player1Cursor != null)
+            {
+                PlaceBlock(player1Cursor, ref player1HasPlacedBlock);
+            }
+
+            // Player 2: Press O to place block
+            if (Input.GetKeyDown(KeyCode.O) && !player2HasPlacedBlock && player2Cursor != null)
+            {
+                PlaceBlock(player2Cursor, ref player2HasPlacedBlock);
+            }
+        }
     }
 
-    IEnumerator ResetAndStartNewRound()
+    IEnumerator ResetAndStartNewRound(bool exitBuildingMode = false)
     {
         isResetting = true;
         roundCounter++;
@@ -95,12 +118,13 @@ public class GameManager : MonoBehaviour
             cloneRecorder.StopRecording(Player.PlayerMode.Player1);
             cloneRecorder.StopRecording(Player.PlayerMode.Player2);
             
-            // Hide all existing clones
+            // Hide and reset all existing clones
             foreach (Clone clone in cloneRecorder.player1Clones)
             {
                 if (clone != null)
                 {
                     SetCloneVisibility(clone, false);
+                    clone.ResetToStartPosition();
                 }
             }
             
@@ -109,6 +133,7 @@ public class GameManager : MonoBehaviour
                 if (clone != null)
                 {
                     SetCloneVisibility(clone, false);
+                    clone.ResetToStartPosition();
                 }
             }
         }
@@ -153,6 +178,12 @@ public class GameManager : MonoBehaviour
         {
             // Get the maximum number of clones between both players
             int maxClones = Mathf.Max(cloneRecorder.player1Clones.Count, cloneRecorder.player2Clones.Count);
+            
+            // Exit building mode after spawning has started
+            if (exitBuildingMode && isBuildingMode)
+            {
+                ToggleBuildingMode();
+            }
             
             // Spawn clones from oldest to newest for both players simultaneously
             for (int i = maxClones - 1; i >= 0; i--)
@@ -211,7 +242,7 @@ public class GameManager : MonoBehaviour
     {
         if (roundText != null)
         {
-            roundText.text = "Round: " + roundCounter;
+            roundText.text = roundCounter.ToString();
         }
     }
 
@@ -253,13 +284,60 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    void PlaceBlock(Cursor cursor, ref bool hasPlacedBlock)
+    {
+        if (cursor == null || currentBlock == null)
+            return;
+
+        // Get the currently hovered block from the cursor
+        Block hoveredBlock = cursor.GetCurrentBlock();
+
+        if (hoveredBlock != null)
+        {
+            // Get the position of the tinted square
+            Vector3 blockPosition = hoveredBlock.transform.position;
+
+            // Spawn the block prefab at that position
+            Instantiate(currentBlock, blockPosition, Quaternion.identity);
+
+            // Mark that this player has placed a block
+            hasPlacedBlock = true;
+
+            // Disable the cursor
+            cursor.DisableCursor();
+
+            // Check if both players have placed blocks
+            if (player1HasPlacedBlock && player2HasPlacedBlock)
+            {
+                StartCoroutine(ExitBuildingModeAndStartNewRound());
+            }
+        }
+    }
+
+    IEnumerator ExitBuildingModeAndStartNewRound()
+    {
+        // Small delay to let the player see both blocks placed
+        yield return new WaitForSeconds(0.5f);
+
+        // Start a new round (spawning begins)
+        if (!isResetting)
+        {
+            StartCoroutine(ResetAndStartNewRound(true));
+        }
+    }
+
     void ToggleBuildingMode()
     {
         isBuildingMode = !isBuildingMode;
 
         if (isBuildingMode)
         {
+            buildingModeUI.SetActive(true);
             // Entering building mode
+            // Reset placement flags
+            player1HasPlacedBlock = false;
+            player2HasPlacedBlock = false;
+            
             // Disable players
             if (player1 != null)
             {
@@ -291,7 +369,12 @@ public class GameManager : MonoBehaviour
         }
         else
         {
+            buildingModeUI.SetActive(false);
             // Exiting building mode
+            // Reset placement flags
+            player1HasPlacedBlock = false;
+            player2HasPlacedBlock = false;
+            
             // Stop the looping coroutine
             if (buildingModeCoroutine != null)
             {

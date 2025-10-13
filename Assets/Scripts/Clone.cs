@@ -13,9 +13,12 @@ public class Clone : MonoBehaviour
     private bool isPlaying;
     public SpriteRenderer spriteRenderer;
 
+    [SerializeField]Rigidbody2D rb;
+
     void Awake()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
+        rb = GetComponent<Rigidbody2D>();
     }
 
     void Start()
@@ -39,7 +42,7 @@ public class Clone : MonoBehaviour
             // Update transform position to current recorded position
             if (currentPositionIndex < recordedPath.Length)
             {
-                transform.position = recordedPath[currentPositionIndex];
+                rb.position = recordedPath[currentPositionIndex];
                 currentPositionIndex++;
             }
             else
@@ -55,7 +58,7 @@ public class Clone : MonoBehaviour
         // Reset position to the first recorded position
         if (recordedPath != null && recordedPath.Length > 0)
         {
-            transform.position = recordedPath[0];
+            rb.position = recordedPath[0];
         }
         
         // Reset playback state

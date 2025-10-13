@@ -20,6 +20,11 @@ public class Cursor : MonoBehaviour
     
     // Block hovering
     private Block currentBlock;
+    
+    public Block GetCurrentBlock()
+    {
+        return currentBlock;
+    }
 
     void Start()
     {
@@ -108,6 +113,12 @@ public class Cursor : MonoBehaviour
         }
         
         // Untint any currently tinted block
+        UntintCurrentBlock();
+    }
+
+    void UntintCurrentBlock()
+    {
+        // Ensure only one block is tinted: untint the current block if it exists
         if (currentBlock != null && currentBlock.tint != null)
         {
             currentBlock.tint.color = currentBlock.originalColor;
@@ -118,23 +129,20 @@ public class Cursor : MonoBehaviour
     void OnTriggerEnter2D(Collider2D other)
     {
         // Check if the object has the "tile" tag
-        if (other.CompareTag("tile"))
+        if (other.CompareTag("tile") && isCursorEnabled)
         {
             // Get the Block component
             Block block = other.GetComponent<Block>();
             
-            if (block != null && block.tint != null)
+            if (block != null && block.tint != null && block != currentBlock)
             {
-                // If we already have a block tinted, untint it first
-                if (currentBlock != null && currentBlock != block && currentBlock.tint != null)
-                {
-                    currentBlock.tint.color = currentBlock.originalColor;
-                }
+                // IMPORTANT: Untint any previously tinted block first (only one block tinted at a time)
+                UntintCurrentBlock();
                 
                 // Save original color before tinting
                 block.originalColor = block.tint.color;
                 
-                // Store the new block
+                // Store the new block as current
                 currentBlock = block;
                 
                 // Tint based on player mode
@@ -158,13 +166,10 @@ public class Cursor : MonoBehaviour
             // Get the Block component
             Block block = other.GetComponent<Block>();
             
-            if (block != null && block == currentBlock && block.tint != null)
+            // Only untint if this is the currently tinted block
+            if (block != null && block == currentBlock)
             {
-                // Restore original color
-                block.tint.color = block.originalColor;
-                
-                // Clear stored reference
-                currentBlock = null;
+                UntintCurrentBlock();
             }
         }
     }

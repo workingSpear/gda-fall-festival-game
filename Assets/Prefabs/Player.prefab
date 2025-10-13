@@ -297,7 +297,7 @@ MonoBehaviour:
   hangtimeGravityScale: 2.5
   hangtimeThreshold: 2
   groundCheck: {fileID: 8800315253463817607}
-  groundCheckRadius: 0.1
+  groundCheckRadius: 0.2
   groundLayer:
     serializedVersion: 2
     m_Bits: 8
