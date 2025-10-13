@@ -4,17 +4,22 @@ public class Clone : MonoBehaviour
 {
     public Vector2[] recordedPath;
     public int framesBeforeNextPosition;
+    public float playbackSpeed = 1f;
     
     public int serialNumber;
 
-    private int frameCounter;
+    private float frameCounter;
     private int currentPositionIndex;
     private bool isPlaying;
-    private SpriteRenderer spriteRenderer;
+    public SpriteRenderer spriteRenderer;
 
-    void Start()
+    void Awake()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
+    }
+
+    void Start()
+    {  
         UpdateOpacity();
     }
 
@@ -23,13 +28,13 @@ public class Clone : MonoBehaviour
         if (!isPlaying || recordedPath == null || recordedPath.Length == 0)
             return;
 
-        // Increment frame counter
-        frameCounter++;
+        // Increment frame counter by playback speed
+        frameCounter += playbackSpeed;
 
         // Move to next position every N frames
         if (frameCounter >= framesBeforeNextPosition)
         {
-            frameCounter = 0;
+            frameCounter -= framesBeforeNextPosition;
 
             // Update transform position to current recorded position
             if (currentPositionIndex < recordedPath.Length)
@@ -45,11 +50,28 @@ public class Clone : MonoBehaviour
         }
     }
 
+    public void ResetToStartPosition()
+    {
+        // Reset position to the first recorded position
+        if (recordedPath != null && recordedPath.Length > 0)
+        {
+            transform.position = recordedPath[0];
+        }
+        
+        // Reset playback state
+        currentPositionIndex = 0;
+        frameCounter = 0;
+        isPlaying = false;
+    }
+
     public void PlayRecordedPath()
     {
         currentPositionIndex = 0;
         frameCounter = 0;
         isPlaying = true;
+                 
+        spriteRenderer.enabled = true;
+        UpdateOpacity(); // Re-apply opacity to ensure it's correct
     }
 
     public void UpdateOpacity()

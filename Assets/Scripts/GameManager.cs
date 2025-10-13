@@ -1,0 +1,238 @@
+using UnityEngine;
+using TMPro;
+using System.Collections;
+
+public class GameManager : MonoBehaviour
+{
+    [Header("References")]
+    public Player player1;
+    public Player player2;
+    public CloneRecorder cloneRecorder;
+    public TextMeshProUGUI roundText;
+
+    [Header("Spawn Positions")]
+    public Transform player1SpawnPoint;
+    public Transform player2SpawnPoint;
+
+    [Header("Settings")]
+    [Tooltip("Delay between each clone spawn")]
+    public float cloneSpawnDelay = 0.5f;
+
+    private int roundCounter = 0;
+    private bool isResetting = false;
+
+    void Start()
+    {
+        Application.targetFrameRate = 144;
+        UpdateRoundText();
+        
+        // Round 0: Spawn players immediately
+        if (player1 != null)
+        {
+            if (player1SpawnPoint != null)
+            {
+                player1.transform.position = player1SpawnPoint.position;
+            }
+            SetPlayerVisibility(player1, true);
+            SetPlayerPhysics(player1, true);
+            player1.enabled = true;
+        }
+        
+        if (player2 != null)
+        {
+            if (player2SpawnPoint != null)
+            {
+                player2.transform.position = player2SpawnPoint.position;
+            }
+            SetPlayerVisibility(player2, true);
+            SetPlayerPhysics(player2, true);
+            player2.enabled = true;
+        }
+        
+        // Start recording for round 0
+        if (cloneRecorder != null)
+        {
+            cloneRecorder.StartRecording(Player.PlayerMode.Player1);
+            cloneRecorder.StartRecording(Player.PlayerMode.Player2);
+        }
+    }
+
+    void Update()
+    {
+        // Press K to reset and start new round
+        if (Input.GetKeyDown(KeyCode.P) && !isResetting)
+        {
+            StartCoroutine(ResetAndStartNewRound());
+        }
+    }
+
+    IEnumerator ResetAndStartNewRound()
+    {
+        isResetting = true;
+        roundCounter++;
+        UpdateRoundText();
+
+        // Stop current recording and create clone
+        if (cloneRecorder != null)
+        {
+            cloneRecorder.StopRecording(Player.PlayerMode.Player1);
+            cloneRecorder.StopRecording(Player.PlayerMode.Player2);
+            
+            // Hide all existing clones
+            foreach (Clone clone in cloneRecorder.player1Clones)
+            {
+                if (clone != null)
+                {
+                    SetCloneVisibility(clone, false);
+                }
+            }
+            
+            foreach (Clone clone in cloneRecorder.player2Clones)
+            {
+                if (clone != null)
+                {
+                    SetCloneVisibility(clone, false);
+                }
+            }
+        }
+
+        // Disable players and reset to spawn positions
+        if (player1 != null)
+        {
+            player1.enabled = false;
+            SetPlayerVisibility(player1, false);
+            SetPlayerPhysics(player1, false);
+            if (player1SpawnPoint != null)
+            {
+                player1.transform.position = player1SpawnPoint.position;
+            }
+            // Reset velocity
+            Rigidbody2D rb1 = player1.GetComponent<Rigidbody2D>();
+            if (rb1 != null)
+            {
+                rb1.linearVelocity = Vector2.zero;
+            }
+        }
+
+        if (player2 != null)
+        {
+            player2.enabled = false;
+            SetPlayerVisibility(player2, false);
+            SetPlayerPhysics(player2, false);
+            if (player2SpawnPoint != null)
+            {
+                player2.transform.position = player2SpawnPoint.position;
+            }
+            // Reset velocity
+            Rigidbody2D rb2 = player2.GetComponent<Rigidbody2D>();
+            if (rb2 != null)
+            {
+                rb2.linearVelocity = Vector2.zero;
+            }
+        }
+
+        // Stagger clone spawns from oldest to newest (both players at the same time)
+        if (cloneRecorder != null)
+        {
+            // Get the maximum number of clones between both players
+            int maxClones = Mathf.Max(cloneRecorder.player1Clones.Count, cloneRecorder.player2Clones.Count);
+            
+            // Spawn clones from oldest to newest for both players simultaneously
+            for (int i = maxClones - 1; i >= 0; i--)
+            {
+                // Spawn Player 1 clone if it exists at this index
+                if (i < cloneRecorder.player1Clones.Count)
+                {
+                    Clone clone1 = cloneRecorder.player1Clones[i];
+                    if (clone1 != null)
+                    {
+                        clone1.PlayRecordedPath();
+                    }
+                }
+                
+                // Spawn Player 2 clone if it exists at this index
+                if (i < cloneRecorder.player2Clones.Count)
+                {
+                    Clone clone2 = cloneRecorder.player2Clones[i];
+                    if (clone2 != null)
+                    {
+                        clone2.PlayRecordedPath();
+                    }
+                }
+                
+                // Wait before spawning next set of clones
+                yield return new WaitForSeconds(cloneSpawnDelay);
+            }
+        }
+
+        // Finally, spawn the players
+        if (player1 != null)
+        {
+            SetPlayerVisibility(player1, true);
+            SetPlayerPhysics(player1, true);
+            player1.enabled = true;
+        }
+
+        if (player2 != null)
+        {
+            SetPlayerVisibility(player2, true);
+            SetPlayerPhysics(player2, true);
+            player2.enabled = true;
+        }
+
+        // Start recording for the next round
+        if (cloneRecorder != null)
+        {
+            cloneRecorder.StartRecording(Player.PlayerMode.Player1);
+            cloneRecorder.StartRecording(Player.PlayerMode.Player2);
+        }
+
+        isResetting = false;
+    }
+
+    void UpdateRoundText()
+    {
+        if (roundText != null)
+        {
+            roundText.text = "Round: " + roundCounter;
+        }
+    }
+
+    void SetPlayerVisibility(Player player, bool visible)
+    {
+        if (player != null)
+        {
+            SpriteRenderer spriteRenderer = player.GetComponent<SpriteRenderer>();
+            if (spriteRenderer != null)
+            {
+                spriteRenderer.enabled = visible;
+            }
+        }
+    }
+
+    void SetPlayerPhysics(Player player, bool enabled)
+    {
+        if (player != null)
+        {
+            Rigidbody2D rb = player.GetComponent<Rigidbody2D>();
+            if (rb != null)
+            {
+                // When disabled, make kinematic (no physics)
+                // When enabled, make dynamic (physics active)
+                rb.isKinematic = !enabled;
+            }
+        }
+    }
+
+    void SetCloneVisibility(Clone clone, bool visible)
+    {
+        if (clone != null)
+        {
+            SpriteRenderer spriteRenderer = clone.GetComponent<SpriteRenderer>();
+            if (spriteRenderer != null)
+            {
+                spriteRenderer.enabled = visible;
+            }
+        }
+    }
+}

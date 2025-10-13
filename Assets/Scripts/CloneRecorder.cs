@@ -6,6 +6,8 @@ public class CloneRecorder : MonoBehaviour
     public Rigidbody2D player1Rb, player2Rb;
     public int framesBeforeNextSnapShot = 4;
     public GameObject clonePrefab;
+    [Tooltip("Speed multiplier for clone playback (1.0 = normal speed, 2.0 = 2x speed, 0.5 = half speed)")]
+    public float playbackSpeed = 1f;
     public List<Vector2> player1Positions, player2Positions;
 
     // 2D array to store all recorded position arrays
@@ -20,6 +22,8 @@ public class CloneRecorder : MonoBehaviour
     private bool isRecordingPlayer1;
     private bool isRecordingPlayer2;
 
+    public Sprite player1CloneSprite,player2CloneSprite;
+
     void Start()
     {
         player1Positions = new List<Vector2>();
@@ -28,8 +32,6 @@ public class CloneRecorder : MonoBehaviour
         player2RecordedPaths = new List<Vector2[]>();
         player1Clones = new List<Clone>();
         player2Clones = new List<Clone>();
-
-        StartRecording(Player.PlayerMode.Player1);
     }
 
     void Update()
@@ -103,11 +105,13 @@ public class CloneRecorder : MonoBehaviour
                 
                 if (clone != null)
                 {
+                    clone.spriteRenderer.sprite = player1CloneSprite;
                     clone.recordedPath = recordedPath;
                     clone.framesBeforeNextPosition = framesBeforeNextSnapShot;
+                    clone.playbackSpeed = playbackSpeed;
                     clone.serialNumber = 0; // Newest clone
                     clone.UpdateOpacity();
-                    clone.PlayRecordedPath();
+                    // Don't call PlayRecordedPath here - GameManager handles staggered spawning
                     player1Clones.Insert(0, clone); // Insert at beginning
                 }
             }
@@ -142,11 +146,13 @@ public class CloneRecorder : MonoBehaviour
                 
                 if (clone != null)
                 {
+                    clone.spriteRenderer.sprite = player2CloneSprite;
                     clone.recordedPath = recordedPath;
                     clone.framesBeforeNextPosition = framesBeforeNextSnapShot;
+                    clone.playbackSpeed = playbackSpeed;
                     clone.serialNumber = 0; // Newest clone
                     clone.UpdateOpacity();
-                    clone.PlayRecordedPath();
+                    // Don't call PlayRecordedPath here - GameManager handles staggered spawning
                     player2Clones.Insert(0, clone); // Insert at beginning
                 }
             }
