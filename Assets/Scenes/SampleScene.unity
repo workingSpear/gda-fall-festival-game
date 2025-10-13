@@ -5489,8 +5489,10 @@ MonoBehaviour:
   framesBeforeNextSnapShot: 5
   clonePrefab: {fileID: 2055729744138955338, guid: 1ac7aeee0422439428b020471cfedbb7, type: 3}
   playbackSpeed: 0.75
-  player1Positions: []
-  player2Positions: []
+  player1Velocities: []
+  player2Velocities: []
+  player1StartPositions: []
+  player2StartPositions: []
   player1Clones: []
   player2Clones: []
   player1CloneSprite: {fileID: 4662155779723574306, guid: 1b1391c8d800b824d8e778aa27c381e4, type: 3}

@@ -2,23 +2,30 @@ using UnityEngine;
 
 public class Clone : MonoBehaviour
 {
-    public Vector2[] recordedPath;
-    public int framesBeforeNextPosition;
+    public Vector2[] recordedVelocities;
+    public Vector2 startPosition;
+    public int framesBeforeNextVelocity;
     public float playbackSpeed = 1f;
     
     public int serialNumber;
 
     private float frameCounter;
-    private int currentPositionIndex;
+    private int currentVelocityIndex;
     private bool isPlaying;
     public SpriteRenderer spriteRenderer;
-
-    [SerializeField]Rigidbody2D rb;
+    private Rigidbody2D rb;
 
     void Awake()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
         rb = GetComponent<Rigidbody2D>();
+        
+        // Set up rigidbody for physics-based playback
+        if (rb != null)
+        {
+            rb.isKinematic = false;
+            rb.gravityScale = 2f; // Match player gravity
+        }
     }
 
     void Start()
@@ -28,50 +35,62 @@ public class Clone : MonoBehaviour
 
     void Update()
     {
-        if (!isPlaying || recordedPath == null || recordedPath.Length == 0)
+        if (!isPlaying || recordedVelocities == null || recordedVelocities.Length == 0)
             return;
 
         // Increment frame counter by playback speed
         frameCounter += playbackSpeed;
 
-        // Move to next position every N frames
-        if (frameCounter >= framesBeforeNextPosition)
+        // Apply next velocity every N frames
+        if (frameCounter >= framesBeforeNextVelocity)
         {
-            frameCounter -= framesBeforeNextPosition;
+            frameCounter -= framesBeforeNextVelocity;
 
-            // Update transform position to current recorded position
-            if (currentPositionIndex < recordedPath.Length)
+            // Apply the recorded velocity to rigidbody
+            if (currentVelocityIndex < recordedVelocities.Length && rb != null)
             {
-                rb.position = recordedPath[currentPositionIndex];
-                currentPositionIndex++;
+                rb.linearVelocity = recordedVelocities[currentVelocityIndex];
+                currentVelocityIndex++;
             }
             else
             {
-                // Reached end of path
+                // Reached end of recording
                 isPlaying = false;
+                if (rb != null)
+                {
+                    rb.linearVelocity = Vector2.zero;
+                }
             }
         }
     }
 
     public void ResetToStartPosition()
     {
-        // Reset position to the first recorded position
-        if (recordedPath != null && recordedPath.Length > 0)
+        // Reset to starting position
+        if (rb != null)
         {
-            rb.position = recordedPath[0];
+            rb.position = startPosition;
+            rb.linearVelocity = Vector2.zero;
         }
         
         // Reset playback state
-        currentPositionIndex = 0;
+        currentVelocityIndex = 0;
         frameCounter = 0;
         isPlaying = false;
     }
 
     public void PlayRecordedPath()
     {
-        currentPositionIndex = 0;
+        currentVelocityIndex = 0;
         frameCounter = 0;
         isPlaying = true;
+        
+        // Reset to start position
+        if (rb != null)
+        {
+            rb.position = startPosition;
+            rb.linearVelocity = Vector2.zero;
+        }
                  
         spriteRenderer.enabled = true;
         UpdateOpacity(); // Re-apply opacity to ensure it's correct

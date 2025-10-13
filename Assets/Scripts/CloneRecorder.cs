@@ -8,71 +8,99 @@ public class CloneRecorder : MonoBehaviour
     public GameObject clonePrefab;
     [Tooltip("Speed multiplier for clone playback (1.0 = normal speed, 2.0 = 2x speed, 0.5 = half speed)")]
     public float playbackSpeed = 1f;
-    public List<Vector2> player1Positions, player2Positions;
+    
+    // Recording velocities instead of positions
+    public List<Vector2> player1Velocities, player2Velocities;
+    
+    // Recording starting positions
+    private Vector2 player1StartPosition, player2StartPosition;
 
-    // 2D array to store all recorded position arrays
-    public List<Vector2[]> player1RecordedPaths;
-    public List<Vector2[]> player2RecordedPaths;
+    // Arrays to store all recorded velocity arrays
+    public List<Vector2[]> player1RecordedVelocities;
+    public List<Vector2[]> player2RecordedVelocities;
+    
+    // Starting positions for each recording
+    public List<Vector2> player1StartPositions;
+    public List<Vector2> player2StartPositions;
     
     // List to keep track of spawned clones
     public List<Clone> player1Clones;
     public List<Clone> player2Clones;
 
-    private int frameCounter;
+    private int player1FrameCounter;
+    private int player2FrameCounter;
     private bool isRecordingPlayer1;
     private bool isRecordingPlayer2;
 
-    public Sprite player1CloneSprite,player2CloneSprite;
+    public Sprite player1CloneSprite, player2CloneSprite;
 
     void Start()
     {
-        player1Positions = new List<Vector2>();
-        player2Positions = new List<Vector2>();
-        player1RecordedPaths = new List<Vector2[]>();
-        player2RecordedPaths = new List<Vector2[]>();
+        player1Velocities = new List<Vector2>();
+        player2Velocities = new List<Vector2>();
+        player1RecordedVelocities = new List<Vector2[]>();
+        player2RecordedVelocities = new List<Vector2[]>();
+        player1StartPositions = new List<Vector2>();
+        player2StartPositions = new List<Vector2>();
         player1Clones = new List<Clone>();
         player2Clones = new List<Clone>();
     }
 
     void Update()
     {
-        // Increment frame counter
-        frameCounter++;
-
-        // Record position every N frames
-        if (frameCounter >= framesBeforeNextSnapShot)
+        // Record Player 1 velocity
+        if (isRecordingPlayer1 && player1Rb != null)
         {
-            frameCounter = 0;
-
-            if (isRecordingPlayer1 && player1Rb != null)
+            player1FrameCounter++;
+            
+            if (player1FrameCounter >= framesBeforeNextSnapShot)
             {
-                player1Positions.Add(player1Rb.position);
+                player1FrameCounter = 0;
+                player1Velocities.Add(player1Rb.linearVelocity);
             }
+        }
 
-            if (isRecordingPlayer2 && player2Rb != null)
+        // Record Player 2 velocity
+        if (isRecordingPlayer2 && player2Rb != null)
+        {
+            player2FrameCounter++;
+            
+            if (player2FrameCounter >= framesBeforeNextSnapShot)
             {
-                player2Positions.Add(player2Rb.position);
+                player2FrameCounter = 0;
+                player2Velocities.Add(player2Rb.linearVelocity);
             }
         }
     }
 
-    //architecture is gonna look basically like this:
-    //recording this clone...so according to framesBeforeNextSnapShot, we're gonna record the X and Y position of the player inside of a Vector2 and store it inside of a list.
-    //when the recording stops, create a clone and pass it the List of positions that were recorded.
-    //clear the original list in preparation for the next recording.
+    //New architecture:
+    //Record velocities every N frames and store in a list
+    //Also record the starting position when recording begins
+    //When recording stops, create a clone with the velocity data and starting position
+    //The clone will use physics to replay the movements
     public void StartRecording(Player.PlayerMode playerMode)
     {
         if (playerMode == Player.PlayerMode.Player1)
         {
-            player1Positions.Clear();
+            player1Velocities.Clear();
             isRecordingPlayer1 = true;
-            frameCounter = 0;
+            player1FrameCounter = 0;
+            // Save starting position
+            if (player1Rb != null)
+            {
+                player1StartPosition = player1Rb.position;
+            }
         }
         else if (playerMode == Player.PlayerMode.Player2)
         {
-            player2Positions.Clear();
+            player2Velocities.Clear();
             isRecordingPlayer2 = true;
-            frameCounter = 0;
+            player2FrameCounter = 0;
+            // Save starting position
+            if (player2Rb != null)
+            {
+                player2StartPosition = player2Rb.position;
+            }
         }
     }
 
@@ -82,12 +110,13 @@ public class CloneRecorder : MonoBehaviour
         {
             isRecordingPlayer1 = false;
             
-            // Convert list to array
-            Vector2[] recordedPath = player1Positions.ToArray();
-            player1RecordedPaths.Add(recordedPath);
+            // Convert velocity list to array
+            Vector2[] recordedVelocities = player1Velocities.ToArray();
+            player1RecordedVelocities.Add(recordedVelocities);
+            player1StartPositions.Add(player1StartPosition);
             
-            // Create a clone and pass it the recorded path
-            if (clonePrefab != null && recordedPath.Length > 0)
+            // Create a clone and pass it the recorded velocities
+            if (clonePrefab != null && recordedVelocities.Length > 0)
             {
                 // Update existing clones' serial numbers
                 foreach (Clone existingClone in player1Clones)
@@ -99,36 +128,38 @@ public class CloneRecorder : MonoBehaviour
                     }
                 }
                 
-                // Create new clone
-                GameObject cloneObj = Instantiate(clonePrefab, recordedPath[0], Quaternion.identity);
+                // Create new clone at starting position
+                GameObject cloneObj = Instantiate(clonePrefab, player1StartPosition, Quaternion.identity);
                 Clone clone = cloneObj.GetComponent<Clone>();
                 
                 if (clone != null)
                 {
                     clone.spriteRenderer.sprite = player1CloneSprite;
-                    clone.recordedPath = recordedPath;
-                    clone.framesBeforeNextPosition = framesBeforeNextSnapShot;
+                    clone.recordedVelocities = recordedVelocities;
+                    clone.startPosition = player1StartPosition;
+                    clone.framesBeforeNextVelocity = framesBeforeNextSnapShot;
                     clone.playbackSpeed = playbackSpeed;
                     clone.serialNumber = 0; // Newest clone
                     clone.UpdateOpacity();
-                    // Don't call PlayRecordedPath here - GameManager handles staggered spawning
+                    // Don't call PlayRecording here - GameManager handles staggered spawning
                     player1Clones.Insert(0, clone); // Insert at beginning
                 }
             }
             
             // Clear the list for next recording
-            player1Positions.Clear();
+            player1Velocities.Clear();
         }
         else if (playerMode == Player.PlayerMode.Player2)
         {
             isRecordingPlayer2 = false;
             
-            // Convert list to array
-            Vector2[] recordedPath = player2Positions.ToArray();
-            player2RecordedPaths.Add(recordedPath);
+            // Convert velocity list to array
+            Vector2[] recordedVelocities = player2Velocities.ToArray();
+            player2RecordedVelocities.Add(recordedVelocities);
+            player2StartPositions.Add(player2StartPosition);
             
-            // Create a clone and pass it the recorded path
-            if (clonePrefab != null && recordedPath.Length > 0)
+            // Create a clone and pass it the recorded velocities
+            if (clonePrefab != null && recordedVelocities.Length > 0)
             {
                 // Update existing clones' serial numbers
                 foreach (Clone existingClone in player2Clones)
@@ -140,25 +171,26 @@ public class CloneRecorder : MonoBehaviour
                     }
                 }
                 
-                // Create new clone
-                GameObject cloneObj = Instantiate(clonePrefab, recordedPath[0], Quaternion.identity);
+                // Create new clone at starting position
+                GameObject cloneObj = Instantiate(clonePrefab, player2StartPosition, Quaternion.identity);
                 Clone clone = cloneObj.GetComponent<Clone>();
                 
                 if (clone != null)
                 {
                     clone.spriteRenderer.sprite = player2CloneSprite;
-                    clone.recordedPath = recordedPath;
-                    clone.framesBeforeNextPosition = framesBeforeNextSnapShot;
+                    clone.recordedVelocities = recordedVelocities;
+                    clone.startPosition = player2StartPosition;
+                    clone.framesBeforeNextVelocity = framesBeforeNextSnapShot;
                     clone.playbackSpeed = playbackSpeed;
                     clone.serialNumber = 0; // Newest clone
                     clone.UpdateOpacity();
-                    // Don't call PlayRecordedPath here - GameManager handles staggered spawning
+                    // Don't call PlayRecording here - GameManager handles staggered spawning
                     player2Clones.Insert(0, clone); // Insert at beginning
                 }
             }
             
             // Clear the list for next recording
-            player2Positions.Clear();
+            player2Velocities.Clear();
         }
     }
 }

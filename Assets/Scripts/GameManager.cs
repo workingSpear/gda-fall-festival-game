@@ -491,18 +491,18 @@ public class GameManager : MonoBehaviour
                 float maxDuration = 0f;
                 foreach (Clone clone in cloneRecorder.player1Clones)
                 {
-                    if (clone != null && clone.recordedPath != null)
+                    if (clone != null && clone.recordedVelocities != null)
                     {
-                        float duration = (clone.recordedPath.Length * clone.framesBeforeNextPosition) / (Application.targetFrameRate * clone.playbackSpeed);
+                        float duration = (clone.recordedVelocities.Length * clone.framesBeforeNextVelocity) / (Application.targetFrameRate * clone.playbackSpeed);
                         maxDuration = Mathf.Max(maxDuration, duration);
                     }
                 }
 
                 foreach (Clone clone in cloneRecorder.player2Clones)
                 {
-                    if (clone != null && clone.recordedPath != null)
+                    if (clone != null && clone.recordedVelocities != null)
                     {
-                        float duration = (clone.recordedPath.Length * clone.framesBeforeNextPosition) / (Application.targetFrameRate * clone.playbackSpeed);
+                        float duration = (clone.recordedVelocities.Length * clone.framesBeforeNextVelocity) / (Application.targetFrameRate * clone.playbackSpeed);
                         maxDuration = Mathf.Max(maxDuration, duration);
                     }
                 }

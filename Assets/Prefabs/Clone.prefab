@@ -43,7 +43,7 @@ SpriteRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2055729744138955338}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 0
   m_ReceiveShadows: 0
   m_DynamicOccludee: 1
@@ -148,7 +148,7 @@ Rigidbody2D:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2055729744138955338}
-  m_BodyType: 1
+  m_BodyType: 0
   m_Simulated: 1
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 0
@@ -179,12 +179,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3bf36a888e2f98e428c58e05d895de17, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Clone
-  recordedPath: []
-  framesBeforeNextPosition: 0
+  recordedVelocities: []
+  startPosition: {x: 0, y: 0}
+  framesBeforeNextVelocity: 0
   playbackSpeed: 1
   serialNumber: 0
   spriteRenderer: {fileID: 8160529691683580892}
-  rb: {fileID: 3322098961998931059}
 --- !u!1 &7552506681297967486
 GameObject:
   m_ObjectHideFlags: 0
