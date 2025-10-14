@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 3936982639603811487}
   - component: {fileID: 3186128685733282775}
   - component: {fileID: 3467572245052822303}
+  - component: {fileID: 6758434600570300681}
   m_Layer: 3
   m_Name: Block
   m_TagString: Untagged
@@ -137,3 +138,20 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 1, y: 1}
   m_EdgeRadius: 0
+--- !u!114 &6758434600570300681
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1086913697617101674}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b3811067806a67c43832db0095ce53c2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Block
+  size: 1
+  blockName: BLOCK
+  blockSprite: {fileID: 3641931977962690872, guid: 42596ab4a39f8b44ba67e0bacd02a658, type: 3}
+  tint: {fileID: 0}
+  originalColor: {r: 0, g: 0, b: 0, a: 0}

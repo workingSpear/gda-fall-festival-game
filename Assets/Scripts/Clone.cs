@@ -287,6 +287,13 @@ public class Clone : MonoBehaviour
             // Mark that this clone has been hitstopped
             hasBeenHitStopped = true;
             
+            // Award point to this clone's team
+            GameManager gameManager = GameObject.FindGameObjectWithTag("gamemanager")?.GetComponent<GameManager>();
+            if (gameManager != null)
+            {
+                gameManager.AwardPoint(playerMode);
+            }
+            
             // Get the appropriate death prefab based on player mode (though won't be used for end)
             GameObject deathPrefab = playerMode == Player.PlayerMode.Player1 ? player1DeathPrefab : player2DeathPrefab;
             

@@ -268,6 +268,13 @@ public class Player : MonoBehaviour
             {
                 hitstopManager.TriggerHitstop(this, deathPrefab, false);
             }
+            
+            // Notify GameManager of player death
+            GameManager gameManager = GameObject.FindGameObjectWithTag("gamemanager")?.GetComponent<GameManager>();
+            if (gameManager != null)
+            {
+                gameManager.OnPlayerDeath(playerMode);
+            }
         }
         else if (other.CompareTag("end"))
         {
@@ -280,6 +287,13 @@ public class Player : MonoBehaviour
             // Mark that this player has been hitstopped
             hasBeenHitStopped = true;
             
+            // Award point to this player's team
+            GameManager gameManager = GameObject.FindGameObjectWithTag("gamemanager")?.GetComponent<GameManager>();
+            if (gameManager != null)
+            {
+                gameManager.AwardPoint(playerMode);
+            }
+            
             // Get the appropriate death prefab based on player mode (though won't be used for end)
             GameObject deathPrefab = playerMode == PlayerMode.Player1 ? player1DeathPrefab : player2DeathPrefab;
             
@@ -287,6 +301,12 @@ public class Player : MonoBehaviour
             if (hitstopManager != null)
             {
                 hitstopManager.TriggerHitstop(this, deathPrefab, true);
+            }
+            
+            // Notify GameManager of player death (reaching end also counts as "death" for round-end logic)
+            if (gameManager != null)
+            {
+                gameManager.OnPlayerDeath(playerMode);
             }
         }
     }

@@ -8,6 +8,7 @@ TagManager:
   - end
   - hazard
   - gamemanager
+  - object
   layers:
   - Default
   - TransparentFX
@@ -17,7 +18,7 @@ TagManager:
   - UI
   - Clone
   - Player
-  - 
+  - BlockSelect
   - 
   - 
   - 

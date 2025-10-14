@@ -18,6 +18,26 @@ public class GameManager : MonoBehaviour
     public Cursor player1Cursor;
     public Cursor player2Cursor;
     public HitstopManager hitstopManager;
+    
+    [Header("Points System")]
+    [Tooltip("UI Images for Player 1 points display")]
+    public UnityEngine.UI.Image[] player1PointImages;
+    [Tooltip("UI Images for Player 2 points display")]
+    public UnityEngine.UI.Image[] player2PointImages;
+    
+    [Header("Picking Mode UI")]
+    [Tooltip("Player 1 block name display")]
+    public TextMeshProUGUI player1BlockNameText;
+    [Tooltip("Player 1 block sprite display")]
+    public UnityEngine.UI.Image player1BlockImage;
+    [Tooltip("Player 1 block size display (array of 4 images)")]
+    public UnityEngine.UI.Image[] player1SizeImages;
+    [Tooltip("Player 2 block name display")]
+    public TextMeshProUGUI player2BlockNameText;
+    [Tooltip("Player 2 block sprite display")]
+    public UnityEngine.UI.Image player2BlockImage;
+    [Tooltip("Player 2 block size display (array of 4 images)")]
+    public UnityEngine.UI.Image[] player2SizeImages;
 
     [Header("Spawn Positions")]
     public Transform player1SpawnPoint;
@@ -33,10 +53,17 @@ public class GameManager : MonoBehaviour
     [Tooltip("Delay before triggering mass hitstop when timer reaches 0")]
     public float timeoutDelay = 1f;
 
+    [Header("Picking Mode")]
+    public GameObject pickingModeUI;
+    [Tooltip("Array of selectable objects for picking mode")]
+    public GameObject[] pickableObjects;
+    
     [Header("Building Mode")]
     [Tooltip("Block prefab to place in building mode")]
     public GameObject currentBlock;
     public GameObject buildingModeUI;
+    [Tooltip("Parent transform for all placed blocks")]
+    public Transform objectTransformMommy;
     [Tooltip("Tiles to tint for player 1 in building mode")]
     public GameObject[] spawnProtectionTiles;
     [Tooltip("Tiles to tint for player 2 in building mode")]
@@ -48,10 +75,18 @@ public class GameManager : MonoBehaviour
 
     private int roundCounter = 0;
     private bool isResetting = false;
+    private bool isPickingMode = false;
     private bool isBuildingMode = false;
     private Coroutine buildingModeCoroutine;
     private bool player1HasPlacedBlock = false;
     private bool player2HasPlacedBlock = false;
+    private bool player1HasPicked = false;
+    private bool player2HasPicked = false;
+    [SerializeField]private GameObject player1SelectedBlock;
+    [SerializeField]private GameObject player2SelectedBlock;
+    private System.Collections.Generic.List<GameObject> currentPickableObjects = new System.Collections.Generic.List<GameObject>();
+    private System.Collections.Generic.List<GameObject> spawnedPickableObjects = new System.Collections.Generic.List<GameObject>();
+    private System.Collections.Generic.Dictionary<GameObject, GameObject> instanceToPrefabMap = new System.Collections.Generic.Dictionary<GameObject, GameObject>();
     
     // Timer state
     private float timeRemaining = 0f;
@@ -59,14 +94,22 @@ public class GameManager : MonoBehaviour
     private bool hasTimedOut = false;
     private bool isTransitioning = false;
     
+    // Points tracking
+    private int player1Points = 0;
+    private int player2Points = 0;
+    
     // Store original tile colors for restoration
     private System.Collections.Generic.Dictionary<GameObject, Color> player1TileOriginalColors = new System.Collections.Generic.Dictionary<GameObject, Color>();
     private System.Collections.Generic.Dictionary<GameObject, Color> player2TileOriginalColors = new System.Collections.Generic.Dictionary<GameObject, Color>();
+    
+    // Store original sprite renderer colors for placed objects
+    private System.Collections.Generic.Dictionary<SpriteRenderer, Color> placedObjectOriginalColors = new System.Collections.Generic.Dictionary<SpriteRenderer, Color>();
 
     void Start()
     {
         Application.targetFrameRate = 144;
         UpdateRoundText();
+        UpdatePointDisplays();
         
         // Assign spawn points to clone recorder
         if (cloneRecorder != null)
@@ -117,7 +160,7 @@ public class GameManager : MonoBehaviour
     void Update()
     {
         // Update timer during platforming mode
-        if (isTimerRunning && !isBuildingMode && !hasTimedOut)
+        if (isTimerRunning && !isPickingMode && !isBuildingMode && !hasTimedOut)
         {
             timeRemaining -= Time.deltaTime;
             
@@ -132,27 +175,51 @@ public class GameManager : MonoBehaviour
             UpdateTimerDisplay();
         }
         
-        // Check if all players and clones are disabled (not resetting, not in build mode, not already transitioning)
-        if (!isResetting && !isBuildingMode && !isTransitioning)
+        // Picking mode selection
+        if (isPickingMode)
+        {
+            // Player 1: Press Q to make selection
+            if (Input.GetKeyDown(KeyCode.Q))
+            {
+                Debug.Log($"Q pressed! player1HasPicked={player1HasPicked}, player1Cursor={player1Cursor}");
+                if (!player1HasPicked && player1Cursor != null)
+                {
+                    MakeSelection(player1Cursor, ref player1HasPicked);
+                }
+            }
+
+            // Player 2: Press O to make selection
+            if (Input.GetKeyDown(KeyCode.O))
+            {
+                Debug.Log($"O pressed! player2HasPicked={player2HasPicked}, player2Cursor={player2Cursor}");
+                if (!player2HasPicked && player2Cursor != null)
+                {
+                    MakeSelection(player2Cursor, ref player2HasPicked);
+                }
+            }
+        }
+        
+        // Check if all players and clones are disabled (not resetting, not in picking/build mode, not already transitioning)
+        if (!isResetting && !isPickingMode && !isBuildingMode && !isTransitioning)
         {
             if (AreAllEntitiesDisabled())
             {
                 isTransitioning = true;
-                StartCoroutine(TransitionToBuildMode());
+                StartCoroutine(TransitionToPickingMode());
             }
         }
         
         // Press P to reset and start new round
-        if (Input.GetKeyDown(KeyCode.P) && !isResetting && !isBuildingMode)
-        {
-            StartCoroutine(ResetAndStartNewRound());
-        }
+        // if (Input.GetKeyDown(KeyCode.P) && !isResetting && !isBuildingMode)
+        // {
+        //     StartCoroutine(ResetAndStartNewRound());
+        // }
         
         // Press Y to toggle building mode
-        if (Input.GetKeyDown(KeyCode.Y))
-        {
-            ToggleBuildingMode();
-        }
+        // if (Input.GetKeyDown(KeyCode.Y))
+        // {
+        //     ToggleBuildingMode();
+        // }
 
         // Building mode block placement
         if (isBuildingMode)
@@ -240,17 +307,40 @@ public class GameManager : MonoBehaviour
             }
         }
 
-        // Stagger clone spawns from oldest to newest (both players at the same time)
+        // Exit building mode if needed
+        if (exitBuildingMode && isBuildingMode)
+        {
+            ToggleBuildingMode();
+        }
+        
+        // First, spawn the players
+        if (player1 != null)
+        {
+            player1.ResetPlayer();
+            SetPlayerVisibility(player1, true);
+            SetPlayerPhysics(player1, true);
+            player1.enabled = true;
+        }
+
+        if (player2 != null)
+        {
+            player2.ResetPlayer();
+            SetPlayerVisibility(player2, true);
+            SetPlayerPhysics(player2, true);
+            player2.enabled = true;
+        }
+
+        // Start countdown timer when players spawn
+        timeRemaining = timerDuration;
+        isTimerRunning = true;
+        hasTimedOut = false;
+        UpdateTimerDisplay();
+        
+        // Then, stagger clone spawns from oldest to newest (both players at the same time)
         if (cloneRecorder != null)
         {
             // Get the maximum number of clones between both players
             int maxClones = Mathf.Max(cloneRecorder.player1Clones.Count, cloneRecorder.player2Clones.Count);
-            
-            // Exit building mode after spawning has started
-            if (exitBuildingMode && isBuildingMode)
-            {
-                ToggleBuildingMode();
-            }
             
             // Spawn clones from oldest to newest for both players simultaneously
             for (int i = maxClones - 1; i >= 0; i--)
@@ -280,29 +370,6 @@ public class GameManager : MonoBehaviour
             }
         }
 
-        // Finally, spawn the players
-        if (player1 != null)
-        {
-            player1.ResetPlayer();
-            SetPlayerVisibility(player1, true);
-            SetPlayerPhysics(player1, true);
-            player1.enabled = true;
-        }
-
-        if (player2 != null)
-        {
-            player2.ResetPlayer();
-            SetPlayerVisibility(player2, true);
-            SetPlayerPhysics(player2, true);
-            player2.enabled = true;
-        }
-
-        // Start countdown timer when players spawn
-        timeRemaining = timerDuration;
-        isTimerRunning = true;
-        hasTimedOut = false;
-        UpdateTimerDisplay();
-
         // Start recording for the next round
         if (cloneRecorder != null)
         {
@@ -327,6 +394,95 @@ public class GameManager : MonoBehaviour
         {
             // Format: 10.32 (shows seconds with 2 decimal places for 100ths of a second)
             timerText.text = timeRemaining.ToString("F2");
+        }
+    }
+
+    public void AwardPoint(Player.PlayerMode playerMode)
+    {
+        if (playerMode == Player.PlayerMode.Player1)
+        {
+            player1Points++;
+        }
+        else if (playerMode == Player.PlayerMode.Player2)
+        {
+            player2Points++;
+        }
+        
+        UpdatePointDisplays();
+    }
+
+    public void OnPlayerDeath(Player.PlayerMode playerMode)
+    {
+        // Check if both players are now dead
+        bool bothPlayersDead = false;
+        
+        if (player1 != null && player2 != null)
+        {
+            bothPlayersDead = player1.hasBeenHitStopped && player2.hasBeenHitStopped;
+        }
+        
+        // If both players are dead, start coroutine to kill all remaining clones with queue delay
+        if (bothPlayersDead && cloneRecorder != null && hitstopManager != null)
+        {
+            StartCoroutine(KillRemainingClones());
+        }
+    }
+
+    IEnumerator KillRemainingClones()
+    {
+        if (cloneRecorder == null || hitstopManager == null)
+            yield break;
+        
+        // Kill all remaining active clones with the hitstop queue delay
+        foreach (Clone clone in cloneRecorder.player1Clones)
+        {
+            if (clone != null && clone.enabled && !clone.hasBeenHitStopped)
+            {
+                clone.hasBeenHitStopped = true;
+                hitstopManager.TriggerCloneHitstop(clone, clone.player1DeathPrefab, false);
+            }
+        }
+        
+        foreach (Clone clone in cloneRecorder.player2Clones)
+        {
+            if (clone != null && clone.enabled && !clone.hasBeenHitStopped)
+            {
+                clone.hasBeenHitStopped = true;
+                hitstopManager.TriggerCloneHitstop(clone, clone.player2DeathPrefab, false);
+            }
+        }
+    }
+
+    void UpdatePointDisplays()
+    {
+        // Update Player 1 point images
+        if (player1PointImages != null)
+        {
+            for (int i = 0; i < player1PointImages.Length; i++)
+            {
+                if (player1PointImages[i] != null)
+                {
+                    Color color = player1PointImages[i].color;
+                    // Set opacity to 1 if this point has been earned, otherwise 0
+                    color.a = i < player1Points ? 1f : 0f;
+                    player1PointImages[i].color = color;
+                }
+            }
+        }
+        
+        // Update Player 2 point images (fills from right to left)
+        if (player2PointImages != null)
+        {
+            for (int i = 0; i < player2PointImages.Length; i++)
+            {
+                if (player2PointImages[i] != null)
+                {
+                    Color color = player2PointImages[i].color;
+                    // Fill from right to left: rightmost images light up first
+                    color.a = i >= (player2PointImages.Length - player2Points) ? 1f : 0f;
+                    player2PointImages[i].color = color;
+                }
+            }
         }
     }
 
@@ -365,7 +521,7 @@ public class GameManager : MonoBehaviour
         return true;
     }
 
-    IEnumerator TransitionToBuildMode()
+    IEnumerator TransitionToPickingMode()
     {
         // Small delay to let death effects complete
         yield return new WaitForSeconds(1f);
@@ -406,13 +562,13 @@ public class GameManager : MonoBehaviour
             SetPlayerPhysics(player2, false);
         }
         
-        // Toggle to building mode (this will start clone playback)
-        if (!isBuildingMode)
+        // Enter picking mode
+        if (!isPickingMode)
         {
-            ToggleBuildingMode();
+            EnterPickingMode();
         }
         
-        // Reset transition flag after build mode is active
+        // Reset transition flag after picking mode is active
         isTransitioning = false;
     }
 
@@ -608,9 +764,443 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    void EnterPickingMode()
+    {
+        isPickingMode = true;
+        
+        // Stop the timer during picking mode
+        isTimerRunning = false;
+        
+        // Show picking mode UI
+        if (pickingModeUI != null)
+        {
+            pickingModeUI.SetActive(true);
+        }
+        
+        // Clear UI when entering picking mode (fresh start for new round)
+        ClearBlockInfo(Player.PlayerMode.Player1);
+        ClearBlockInfo(Player.PlayerMode.Player2);
+        
+        // Reset selection flags and selected blocks
+        player1HasPicked = false;
+        player2HasPicked = false;
+        player1SelectedBlock = null;
+        player2SelectedBlock = null;
+        
+        // Fade placed objects to 15% opacity
+        FadePlacedObjects();
+        
+        // Randomly select objects to display
+        SelectRandomObjects();
+        
+        // Disable all players and clones
+        if (player1 != null)
+        {
+            player1.enabled = false;
+            SetPlayerVisibility(player1, false);
+            SetPlayerPhysics(player1, false);
+        }
+        
+        if (player2 != null)
+        {
+            player2.enabled = false;
+            SetPlayerVisibility(player2, false);
+            SetPlayerPhysics(player2, false);
+        }
+        
+        // Disable all clones
+        if (cloneRecorder != null)
+        {
+            foreach (Clone clone in cloneRecorder.player1Clones)
+            {
+                if (clone != null)
+                {
+                    clone.enabled = false;
+                    SetCloneVisibility(clone, false);
+                }
+            }
+            
+            foreach (Clone clone in cloneRecorder.player2Clones)
+            {
+                if (clone != null)
+                {
+                    clone.enabled = false;
+                    SetCloneVisibility(clone, false);
+                }
+            }
+        }
+        
+        // Enable cursors in picking mode
+        if (player1Cursor != null)
+        {
+            player1Cursor.EnableCursor(true);
+            player1Cursor.SetPickingMode();
+        }
+        
+        if (player2Cursor != null)
+        {
+            player2Cursor.EnableCursor(true);
+            player2Cursor.SetPickingMode();
+        }
+    }
+
+    void ExitPickingMode()
+    {
+        isPickingMode = false;
+        
+        // Hide picking mode UI
+        if (pickingModeUI != null)
+        {
+            pickingModeUI.SetActive(false);
+        }
+        
+        // Restore placed objects to full opacity
+        RestorePlacedObjects();
+        
+        // Don't clear block info displays - keep them visible in build mode
+        // ClearBlockInfo(Player.PlayerMode.Player1);
+        // ClearBlockInfo(Player.PlayerMode.Player2);
+        
+        // Disable cursors
+        if (player1Cursor != null)
+        {
+            player1Cursor.DisableCursor();
+        }
+        
+        if (player2Cursor != null)
+        {
+            player2Cursor.DisableCursor();
+        }
+        
+        // Destroy all spawned pickable objects
+        foreach (GameObject obj in spawnedPickableObjects)
+        {
+            if (obj != null)
+            {
+                Destroy(obj);
+            }
+        }
+        spawnedPickableObjects.Clear();
+        
+        // Clear current pickable objects
+        currentPickableObjects.Clear();
+    }
+
+    void FadePlacedObjects()
+    {
+        // Check if Object Transform Mommy exists
+        if (objectTransformMommy == null)
+            return;
+        
+        // Clear the dictionary first
+        placedObjectOriginalColors.Clear();
+        
+        // Get all SpriteRenderers under Object Transform Mommy
+        SpriteRenderer[] spriteRenderers = objectTransformMommy.GetComponentsInChildren<SpriteRenderer>();
+        
+        foreach (SpriteRenderer sr in spriteRenderers)
+        {
+            if (sr != null)
+            {
+                // Store original color
+                placedObjectOriginalColors[sr] = sr.color;
+                
+                // Set to 15% opacity
+                Color fadedColor = sr.color;
+                fadedColor.a = 0.15f;
+                sr.color = fadedColor;
+            }
+        }
+    }
+
+    void RestorePlacedObjects()
+    {
+        // Restore all sprite renderers to their original colors
+        foreach (var kvp in placedObjectOriginalColors)
+        {
+            if (kvp.Key != null)
+            {
+                kvp.Key.color = kvp.Value;
+            }
+        }
+        
+        // Clear the dictionary
+        placedObjectOriginalColors.Clear();
+    }
+
+    public void UpdateBlockInfo(Player.PlayerMode playerMode, Block block)
+    {
+        if (block == null)
+            return;
+        
+        if (playerMode == Player.PlayerMode.Player1)
+        {
+            // Update Player 1 UI
+            if (player1BlockNameText != null)
+            {
+                player1BlockNameText.text = block.blockName;
+            }
+            
+            if (player1BlockImage != null && block.blockSprite != null)
+            {
+                player1BlockImage.sprite = block.blockSprite;
+                player1BlockImage.enabled = true;
+            }
+            
+            // Update size display (show first N images based on size)
+            if (player1SizeImages != null)
+            {
+                for (int i = 0; i < player1SizeImages.Length; i++)
+                {
+                    if (player1SizeImages[i] != null)
+                    {
+                        player1SizeImages[i].enabled = i < block.size;
+                    }
+                }
+            }
+        }
+        else if (playerMode == Player.PlayerMode.Player2)
+        {
+            // Update Player 2 UI
+            if (player2BlockNameText != null)
+            {
+                player2BlockNameText.text = block.blockName;
+            }
+            
+            if (player2BlockImage != null && block.blockSprite != null)
+            {
+                player2BlockImage.sprite = block.blockSprite;
+                player2BlockImage.enabled = true;
+            }
+            
+            // Update size display (show first N images based on size)
+            if (player2SizeImages != null)
+            {
+                for (int i = 0; i < player2SizeImages.Length; i++)
+                {
+                    if (player2SizeImages[i] != null)
+                    {
+                        player2SizeImages[i].enabled = i < block.size;
+                    }
+                }
+            }
+        }
+    }
+
+    public void ClearBlockInfo(Player.PlayerMode playerMode)
+    {
+        if (playerMode == Player.PlayerMode.Player1)
+        {
+            if (player1BlockNameText != null)
+            {
+                player1BlockNameText.text = "";
+            }
+            
+            if (player1BlockImage != null)
+            {
+                player1BlockImage.enabled = false;
+            }
+            
+            // Hide all size images
+            if (player1SizeImages != null)
+            {
+                for (int i = 0; i < player1SizeImages.Length; i++)
+                {
+                    if (player1SizeImages[i] != null)
+                    {
+                        player1SizeImages[i].enabled = false;
+                    }
+                }
+            }
+        }
+        else if (playerMode == Player.PlayerMode.Player2)
+        {
+            if (player2BlockNameText != null)
+            {
+                player2BlockNameText.text = "";
+            }
+            
+            if (player2BlockImage != null)
+            {
+                player2BlockImage.enabled = false;
+            }
+            
+            // Hide all size images
+            if (player2SizeImages != null)
+            {
+                for (int i = 0; i < player2SizeImages.Length; i++)
+                {
+                    if (player2SizeImages[i] != null)
+                    {
+                        player2SizeImages[i].enabled = false;
+                    }
+                }
+            }
+        }
+    }
+
+    void SelectRandomObjects()
+    {
+        currentPickableObjects.Clear();
+        instanceToPrefabMap.Clear();
+        
+        // Destroy any previously spawned pickable objects
+        foreach (GameObject obj in spawnedPickableObjects)
+        {
+            if (obj != null)
+            {
+                Destroy(obj);
+            }
+        }
+        spawnedPickableObjects.Clear();
+        
+        if (pickableObjects == null || pickableObjects.Length == 0)
+            return;
+        
+        // Calculate how many objects to select: max(3, min(roundCounter, pickableObjects.Length))
+        int numToSelect = Mathf.Max(3, roundCounter);
+        numToSelect = Mathf.Min(numToSelect, pickableObjects.Length);
+        
+        // Create a list of indices to randomly select from
+        System.Collections.Generic.List<int> availableIndices = new System.Collections.Generic.List<int>();
+        for (int i = 0; i < pickableObjects.Length; i++)
+        {
+            availableIndices.Add(i);
+        }
+        
+        // Randomly select and spawn objects
+        for (int i = 0; i < numToSelect; i++)
+        {
+            int randomIndex = Random.Range(0, availableIndices.Count);
+            int selectedIndex = availableIndices[randomIndex];
+            GameObject prefab = pickableObjects[selectedIndex];
+            
+            if (prefab != null)
+            {
+                // Generate random position within range (X: -5 to 5, Y: 3 to 4)
+                float randomX = Random.Range(-5f, 5f);
+                float randomY = Random.Range(3f, 4f);
+                Vector3 spawnPosition = new Vector3(randomX, randomY, 0f);
+                
+                // Spawn the object
+                GameObject spawnedObj = Instantiate(prefab, spawnPosition, Quaternion.identity);
+                spawnedPickableObjects.Add(spawnedObj);
+                currentPickableObjects.Add(spawnedObj);
+                
+                // Map instance to original prefab
+                instanceToPrefabMap[spawnedObj] = prefab;
+            }
+            
+            availableIndices.RemoveAt(randomIndex);
+        }
+    }
+
+    void MakeSelection(Cursor cursor, ref bool hasPicked)
+    {
+        Debug.Log($"MakeSelection called for {cursor.playerMode}");
+        
+        // Get the object the cursor is currently hovering over
+        GameObject hoveredObject = cursor.GetCurrentPickableObject();
+        
+        Debug.Log($"Hovered object: {hoveredObject}");
+        
+        if (hoveredObject == null)
+        {
+            Debug.Log("Hovered object is null! Cannot make selection.");
+            return; // Not hovering over a valid pickable object
+        }
+        
+        // The hoveredObject might be a child with the "object" tag
+        // We need to find the root GameObject that was instantiated (the one with the Block component)
+        Block block = hoveredObject.GetComponentInParent<Block>();
+        
+        if (block == null)
+        {
+            Debug.LogError("No Block component found on hovered object!");
+            return;
+        }
+        
+        GameObject rootObject = block.gameObject;
+        
+        Debug.Log($"Root object for lookup: {rootObject.name}");
+        
+        // Get the blockPrefab from the Block component
+        GameObject blockPrefab = block.blockPrefab;
+        
+        if (blockPrefab == null)
+        {
+            Debug.LogError($"Block component on {rootObject.name} has no blockPrefab assigned!");
+            return;
+        }
+        
+        Debug.Log($"Block prefab to use: {blockPrefab.name}");
+        
+        // Store the blockPrefab for this player
+        if (cursor.playerMode == Player.PlayerMode.Player1)
+        {
+            player1SelectedBlock = blockPrefab;
+            Debug.Log($"Player 1 selected block prefab: {blockPrefab.name}");
+        }
+        else if (cursor.playerMode == Player.PlayerMode.Player2)
+        {
+            player2SelectedBlock = blockPrefab;
+            Debug.Log($"Player 2 selected block prefab: {blockPrefab.name}");
+        }
+        
+        // Destroy the selected object
+        Destroy(rootObject);
+        spawnedPickableObjects.Remove(rootObject);
+        currentPickableObjects.Remove(rootObject);
+        instanceToPrefabMap.Remove(rootObject);
+        
+        // Mark as picked
+        hasPicked = true;
+        
+        // Don't clear the UI - keep it visible in build mode
+        // ClearBlockInfo(cursor.playerMode);
+        
+        // Disable the cursor
+        cursor.DisableCursor();
+        
+        // Check if both players have made selections
+        if (player1HasPicked && player2HasPicked)
+        {
+            StartCoroutine(ExitPickingModeAndEnterBuildMode());
+        }
+    }
+
+    IEnumerator ExitPickingModeAndEnterBuildMode()
+    {
+        // Small delay
+        yield return new WaitForSeconds(0.5f);
+        
+        // Exit picking mode
+        ExitPickingMode();
+        
+        // Enter building mode
+        if (!isBuildingMode)
+        {
+            ToggleBuildingMode();
+        }
+    }
+
     void PlaceBlock(Cursor cursor, ref bool hasPlacedBlock)
     {
-        if (cursor == null || currentBlock == null)
+        if (cursor == null)
+            return;
+        
+        // Get the appropriate block prefab for this player
+        GameObject blockToPlace = null;
+        if (cursor.playerMode == Player.PlayerMode.Player1)
+        {
+            blockToPlace = player1SelectedBlock != null ? player1SelectedBlock : currentBlock;
+        }
+        else if (cursor.playerMode == Player.PlayerMode.Player2)
+        {
+            blockToPlace = player2SelectedBlock != null ? player2SelectedBlock : currentBlock;
+        }
+        
+        if (blockToPlace == null)
             return;
 
         // Get the currently hovered block from the cursor
@@ -622,7 +1212,13 @@ public class GameManager : MonoBehaviour
             Vector3 blockPosition = hoveredBlock.transform.position;
 
             // Spawn the block prefab at that position
-            Instantiate(currentBlock, blockPosition, Quaternion.identity);
+            GameObject placedBlock = Instantiate(blockToPlace, blockPosition, Quaternion.identity);
+            
+            // Set the parent to Object Transform Mommy
+            if (objectTransformMommy != null)
+            {
+                placedBlock.transform.SetParent(objectTransformMommy);
+            }
 
             // Mark that this player has placed a block
             hasPlacedBlock = true;
@@ -662,7 +1258,7 @@ public class GameManager : MonoBehaviour
             player1HasPlacedBlock = false;
             player2HasPlacedBlock = false;
             
-            // Stop the timer
+            // Stop the timer during build mode
             isTimerRunning = false;
             
             // Tint build mode tiles
@@ -703,15 +1299,43 @@ public class GameManager : MonoBehaviour
                 }
             }
 
-            // Enable cursors
+            // Enable cursors with building mode sprites
             if (player1Cursor != null)
             {
                 player1Cursor.EnableCursor();
+                
+                // Get the selected block sprite and size for Player 1
+                Sprite p1BlockSprite = null;
+                int p1BlockSize = 1;
+                if (player1SelectedBlock != null)
+                {
+                    Block block = player1SelectedBlock.GetComponent<Block>();
+                    if (block != null)
+                    {
+                        p1BlockSprite = block.blockSprite;
+                        p1BlockSize = block.size;
+                    }
+                }
+                player1Cursor.SetBuildingMode(p1BlockSprite, p1BlockSize);
             }
 
             if (player2Cursor != null)
             {
                 player2Cursor.EnableCursor();
+                
+                // Get the selected block sprite and size for Player 2
+                Sprite p2BlockSprite = null;
+                int p2BlockSize = 1;
+                if (player2SelectedBlock != null)
+                {
+                    Block block = player2SelectedBlock.GetComponent<Block>();
+                    if (block != null)
+                    {
+                        p2BlockSprite = block.blockSprite;
+                        p2BlockSize = block.size;
+                    }
+                }
+                player2Cursor.SetBuildingMode(p2BlockSprite, p2BlockSize);
             }
 
             // Start looping clone playback
