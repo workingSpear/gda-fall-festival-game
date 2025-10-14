@@ -266,7 +266,7 @@ Rigidbody2D:
   m_LinearDamping: 0
   m_AngularDamping: 0.05
   m_GravityScale: 1
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 6200000, guid: 6fe33868c3ec38d41a709691eb0d5f48, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -305,3 +305,7 @@ MonoBehaviour:
   coyoteTime: 0.1
   jumpCooldown: 0.2
   jumpCutVelocity: 6
+  hitstopManager: {fileID: 0}
+  player1DeathPrefab: {fileID: 0}
+  player2DeathPrefab: {fileID: 0}
+  jumpableHead: {fileID: 3758031948016595734}

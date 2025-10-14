@@ -155,14 +155,14 @@ Rigidbody2D:
   m_Mass: 1
   m_LinearDamping: 0
   m_AngularDamping: 0.05
-  m_GravityScale: 0
+  m_GravityScale: 1
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
   m_ExcludeLayers:
     serializedVersion: 2
-    m_Bits: 64
+    m_Bits: 0
   m_Interpolate: 0
   m_SleepingMode: 1
   m_CollisionDetection: 1
@@ -184,7 +184,13 @@ MonoBehaviour:
   framesBeforeNextVelocity: 0
   playbackSpeed: 1
   serialNumber: 0
+  isBuildingMode: 0
+  playerMode: 0
+  player1DeathPrefab: {fileID: 4457446509966006283, guid: c95b943e24187c3499f90cb61c3f5a31, type: 3}
+  player2DeathPrefab: {fileID: 1836713445987593280, guid: cd3ff528571c2704eaab08a16dcd4338, type: 3}
+  jumpableHead: {fileID: 2423208706425411161}
   spriteRenderer: {fileID: 8160529691683580892}
+  hitstopManager: {fileID: 0}
 --- !u!1 &7552506681297967486
 GameObject:
   m_ObjectHideFlags: 0
@@ -233,7 +239,7 @@ BoxCollider2D:
     m_Bits: 0
   m_ExcludeLayers:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 64
   m_LayerOverridePriority: 0
   m_ForceSendLayers:
     serializedVersion: 2

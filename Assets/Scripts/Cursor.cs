@@ -35,6 +35,13 @@ public class Cursor : MonoBehaviour
         {
             spriteRenderer.enabled = false;
         }
+        
+        // Disable box collider at start
+        BoxCollider2D boxCollider = GetComponent<BoxCollider2D>();
+        if (boxCollider != null)
+        {
+            boxCollider.enabled = false;
+        }
     }
 
     void Update()
@@ -102,6 +109,13 @@ public class Cursor : MonoBehaviour
         {
             spriteRenderer.enabled = true;
         }
+        
+        // Enable box collider when cursor is enabled
+        BoxCollider2D boxCollider = GetComponent<BoxCollider2D>();
+        if (boxCollider != null)
+        {
+            boxCollider.enabled = true;
+        }
     }
 
     public void DisableCursor()
@@ -110,6 +124,13 @@ public class Cursor : MonoBehaviour
         if (spriteRenderer != null)
         {
             spriteRenderer.enabled = false;
+        }
+        
+        // Disable box collider when cursor is disabled
+        BoxCollider2D boxCollider = GetComponent<BoxCollider2D>();
+        if (boxCollider != null)
+        {
+            boxCollider.enabled = false;
         }
         
         // Untint any currently tinted block

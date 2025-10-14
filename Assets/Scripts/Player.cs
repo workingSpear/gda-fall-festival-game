@@ -38,8 +38,21 @@ public class Player : MonoBehaviour
     [Tooltip("Velocity to set when jump button is released early")]
     public float jumpCutVelocity = 2f;
 
+    [Header("Hitstop Settings")]
+    public HitstopManager hitstopManager;
+    [Tooltip("Prefab to spawn for Player 1 on death")]
+    public GameObject player1DeathPrefab;
+    [Tooltip("Prefab to spawn for Player 2 on death")]
+    public GameObject player2DeathPrefab;
+
+    [Header("Collider References")]
+    public BoxCollider2D jumpableHead;
+
     private Rigidbody2D rb;
+    private SpriteRenderer spriteRenderer;
     private bool isGrounded;
+    [HideInInspector]
+    public bool hasBeenHitStopped = false;
     private bool wasGrounded;
     private float moveInput;
     private float jumpBufferCounter;
@@ -50,6 +63,7 @@ public class Player : MonoBehaviour
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
+        spriteRenderer = GetComponent<SpriteRenderer>();
         rb.gravityScale = normalGravityScale;
         lastJumpTime = -jumpCooldown; // Allow jumping immediately at start
         
@@ -61,10 +75,17 @@ public class Player : MonoBehaviour
             groundCheckObj.transform.localPosition = new Vector3(0, -0.5f, 0);
             groundCheck = groundCheckObj.transform;
         }
+    
     }
 
     void Update()
     {
+        // Don't process input or movement if player has been hitstopped
+        if (hasBeenHitStopped)
+        {
+            return;
+        }
+        
         // Check if player is grounded
         wasGrounded = isGrounded;
         isGrounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
@@ -89,6 +110,17 @@ public class Player : MonoBehaviour
 
     void FixedUpdate()
     {
+        // Don't apply physics if player has been hitstopped
+        if (hasBeenHitStopped)
+        {
+            // Keep velocity at zero
+            if (rb != null)
+            {
+                rb.linearVelocity = Vector2.zero;
+            }
+            return;
+        }
+        
         // Apply horizontal movement
         rb.linearVelocity = new Vector2(moveInput * moveSpeed, rb.linearVelocity.y);
 
@@ -174,6 +206,87 @@ public class Player : MonoBehaviour
             if (Input.GetKeyUp(KeyCode.I))
             {
                 isHoldingJump = false;
+            }
+        }
+    }
+
+    public void ResetPlayer()
+    {
+        // Reset hitstop flag
+        hasBeenHitStopped = false;
+        
+        // Restore sprite to normal state
+        if (spriteRenderer != null)
+        {
+            spriteRenderer.enabled = true;
+            spriteRenderer.color = Color.white;
+            spriteRenderer.sortingOrder = 11;
+        }
+        
+        // Re-enable hitboxes
+        BoxCollider2D boxCollider = GetComponent<BoxCollider2D>();
+        if (boxCollider != null)
+        {
+            boxCollider.enabled = true;
+        }
+        
+        if (jumpableHead != null)
+        {
+            jumpableHead.enabled = true;
+        }
+        
+        // Restore gravity and reset physics
+        if (rb != null)
+        {
+            rb.gravityScale = normalGravityScale;
+            rb.linearVelocity = Vector2.zero;
+            rb.bodyType = RigidbodyType2D.Dynamic;
+        }
+        
+        // Ensure time scale is normal
+        Time.timeScale = 1f;
+    }
+
+    void OnTriggerEnter2D(Collider2D other)
+    {
+        if (other.CompareTag("hazard"))
+        {
+            // Only allow one hitstop per player
+            if (hasBeenHitStopped)
+            {
+                return;
+            }
+            
+            // Mark that this player has been hitstopped
+            hasBeenHitStopped = true;
+            
+            // Get the appropriate death prefab based on player mode
+            GameObject deathPrefab = playerMode == PlayerMode.Player1 ? player1DeathPrefab : player2DeathPrefab;
+            
+            // Call hitstop manager to handle the effect (death hitstop)
+            if (hitstopManager != null)
+            {
+                hitstopManager.TriggerHitstop(this, deathPrefab, false);
+            }
+        }
+        else if (other.CompareTag("end"))
+        {
+            // Only allow one hitstop per player
+            if (hasBeenHitStopped)
+            {
+                return;
+            }
+            
+            // Mark that this player has been hitstopped
+            hasBeenHitStopped = true;
+            
+            // Get the appropriate death prefab based on player mode (though won't be used for end)
+            GameObject deathPrefab = playerMode == PlayerMode.Player1 ? player1DeathPrefab : player2DeathPrefab;
+            
+            // Call hitstop manager to handle the effect (end hitstop)
+            if (hitstopManager != null)
+            {
+                hitstopManager.TriggerHitstop(this, deathPrefab, true);
             }
         }
     }
