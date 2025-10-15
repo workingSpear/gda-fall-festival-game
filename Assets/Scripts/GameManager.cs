@@ -115,7 +115,7 @@ public class GameManager : MonoBehaviour
             cloneRecorder.player2SpawnPoint = player2SpawnPoint;
         }
         
-        // Round 0: Spawn players immediately
+        // Round 0: Reset players to spawn positions but keep disabled
         if (player1 != null)
         {
             if (player1SpawnPoint != null)
@@ -123,9 +123,9 @@ public class GameManager : MonoBehaviour
                 player1.transform.position = player1SpawnPoint.position;
             }
             player1.ResetPlayer();
-            SetPlayerVisibility(player1, true);
-            SetPlayerPhysics(player1, true);
-            player1.enabled = true;
+            SetPlayerVisibility(player1, false);
+            SetPlayerPhysics(player1, false);
+            player1.enabled = false;
         }
         
         if (player2 != null)
@@ -134,6 +134,32 @@ public class GameManager : MonoBehaviour
             {
                 player2.transform.position = player2SpawnPoint.position;
             }
+            player2.ResetPlayer();
+            SetPlayerVisibility(player2, false);
+            SetPlayerPhysics(player2, false);
+            player2.enabled = false;
+        }
+        
+        // Start the spawn sequence with staggering for round 0
+        StartCoroutine(InitialPlayerSpawn());
+    }
+
+    IEnumerator InitialPlayerSpawn()
+    {
+        // Spawn Player 1 first
+        if (player1 != null)
+        {
+            player1.ResetPlayer();
+            SetPlayerVisibility(player1, true);
+            SetPlayerPhysics(player1, true);
+            player1.enabled = true;
+        }
+        
+        // Wait before spawning player 2
+        yield return new WaitForSeconds(cloneSpawnDelay);
+        
+        if (player2 != null)
+        {
             player2.ResetPlayer();
             SetPlayerVisibility(player2, true);
             SetPlayerPhysics(player2, true);
@@ -205,18 +231,6 @@ public class GameManager : MonoBehaviour
                 StartCoroutine(TransitionToPickingMode());
             }
         }
-        
-        // Press P to reset and start new round
-        // if (Input.GetKeyDown(KeyCode.P) && !isResetting && !isBuildingMode)
-        // {
-        //     StartCoroutine(ResetAndStartNewRound());
-        // }
-        
-        // Press Y to toggle building mode
-        // if (Input.GetKeyDown(KeyCode.Y))
-        // {
-        //     ToggleBuildingMode();
-        // }
 
         // Building mode block placement
         if (isBuildingMode)
@@ -316,30 +330,7 @@ public class GameManager : MonoBehaviour
             ToggleBuildingMode();
         }
         
-        // First, spawn the players
-        if (player1 != null)
-        {
-            player1.ResetPlayer();
-            SetPlayerVisibility(player1, true);
-            SetPlayerPhysics(player1, true);
-            player1.enabled = true;
-        }
-
-        if (player2 != null)
-        {
-            player2.ResetPlayer();
-            SetPlayerVisibility(player2, true);
-            SetPlayerPhysics(player2, true);
-            player2.enabled = true;
-        }
-
-        // Start countdown timer when players spawn
-        timeRemaining = timerDuration;
-        isTimerRunning = true;
-        hasTimedOut = false;
-        UpdateTimerDisplay();
-        
-        // Then, stagger clone spawns from oldest to newest (both players at the same time)
+        // First, stagger clone spawns from oldest to newest (both players at the same time)
         if (cloneRecorder != null)
         {
             // Get the maximum number of clones between both players
@@ -372,6 +363,32 @@ public class GameManager : MonoBehaviour
                 yield return new WaitForSeconds(cloneSpawnDelay);
             }
         }
+        
+        // Finally, spawn the players with their own delay (don't wait for clones to finish)
+        if (player1 != null)
+        {
+            player1.ResetPlayer();
+            SetPlayerVisibility(player1, true);
+            SetPlayerPhysics(player1, true);
+            player1.enabled = true;
+        }
+        
+        // Wait before spawning player 2
+        yield return new WaitForSeconds(cloneSpawnDelay);
+
+        if (player2 != null)
+        {
+            player2.ResetPlayer();
+            SetPlayerVisibility(player2, true);
+            SetPlayerPhysics(player2, true);
+            player2.enabled = true;
+        }
+
+        // Start countdown timer when all players have spawned
+        timeRemaining = timerDuration + (roundCounter);
+        isTimerRunning = true;
+        hasTimedOut = false;
+        UpdateTimerDisplay();
 
         // Start recording for the next round
         if (cloneRecorder != null)
@@ -1448,22 +1465,6 @@ public class GameManager : MonoBehaviour
                 player2Cursor.DisableCursor();
             }
 
-            // Enable players
-            if (player1 != null)
-            {
-                player1.ResetPlayer();
-                SetPlayerVisibility(player1, true);
-                SetPlayerPhysics(player1, true);
-                player1.enabled = true;
-            }
-
-            if (player2 != null)
-            {
-                player2.ResetPlayer();
-                SetPlayerVisibility(player2, true);
-                SetPlayerPhysics(player2, true);
-                player2.enabled = true;
-            }
             
             // Reset timer flags for next round
             hasTimedOut = false;

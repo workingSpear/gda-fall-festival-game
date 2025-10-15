@@ -30,7 +30,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -1.27, y: 0.592, z: 0}
-  m_LocalScale: {x: 0.5, y: 0.5, z: 1}
+  m_LocalScale: {x: 0.4, y: 0.4, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 3700673041531831522}
@@ -190,6 +190,7 @@ MonoBehaviour:
   player2DeathPrefab: {fileID: 1836713445987593280, guid: cd3ff528571c2704eaab08a16dcd4338, type: 3}
   jumpableHead: {fileID: 2423208706425411161}
   spriteRenderer: {fileID: 8160529691683580892}
+  hasBeenHitStopped: 0
   hitstopManager: {fileID: 0}
 --- !u!1 &7552506681297967486
 GameObject:
