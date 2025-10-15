@@ -18,6 +18,7 @@ public class GameManager : MonoBehaviour
     public Cursor player1Cursor;
     public Cursor player2Cursor;
     public HitstopManager hitstopManager;
+    public AudioManager audioManager;
     
     [Header("Points System")]
     [Tooltip("UI Images for Player 1 points display")]
@@ -239,6 +240,12 @@ public class GameManager : MonoBehaviour
         isResetting = true;
         roundCounter++;
         UpdateRoundText();
+        
+        // Crossfade to platformer music
+        if (audioManager != null)
+        {
+            audioManager.CrossfadeToPlatformer();
+        }
 
         // Stop current recording and create clone
         if (cloneRecorder != null)
@@ -684,6 +691,12 @@ public class GameManager : MonoBehaviour
         
         // Stop the timer during picking mode
         isTimerRunning = false;
+        
+        // Crossfade from platformer music
+        if (audioManager != null)
+        {
+            audioManager.CrossfadeFromPlatformer();
+        }
         
         // Show picking mode UI
         if (pickingModeUI != null)
@@ -1296,6 +1309,12 @@ public class GameManager : MonoBehaviour
             // Reset placement flags
             player1HasPlacedBlock = false;
             player2HasPlacedBlock = false;
+            
+            // Crossfade from platformer music (if not already done in picking mode)
+            if (audioManager != null)
+            {
+                audioManager.CrossfadeFromPlatformer();
+            }
             
             // Stop the timer during build mode
             isTimerRunning = false;
