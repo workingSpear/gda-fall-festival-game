@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 3117514346431869862}
   - component: {fileID: 3443334025296551649}
   - component: {fileID: 5712354923997013335}
-  - component: {fileID: 5051107935326993549}
+  - component: {fileID: 2716209705788871973}
   m_Layer: 0
   m_Name: Saw
   m_TagString: hazard
@@ -107,10 +107,11 @@ MonoBehaviour:
   size: 1
   blockName: SAW
   blockSprite: {fileID: -2850130919828143354, guid: 9682fa7464c809b42b5cc4222ef6b85a, type: 3}
+  blockPrefab: {fileID: 0}
   tint: {fileID: 0}
   originalColor: {r: 0, g: 0, b: 0, a: 0}
---- !u!58 &5051107935326993549
-CircleCollider2D:
+--- !u!61 &2716209705788871973
+BoxCollider2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -144,4 +145,14 @@ CircleCollider2D:
   m_CompositeOperation: 0
   m_CompositeOrder: 0
   m_Offset: {x: 0.5, y: 0.5}
-  m_Radius: 0.5
+  m_SpriteTilingProperty:
+    border: {x: 0, y: 0, z: 0, w: 0}
+    pivot: {x: 0, y: 0}
+    oldSize: {x: 1, y: 1}
+    newSize: {x: 1, y: 1}
+    adaptiveTilingThreshold: 0.5
+    drawMode: 0
+    adaptiveTiling: 0
+  m_AutoTiling: 0
+  m_Size: {x: 1, y: 1}
+  m_EdgeRadius: 0

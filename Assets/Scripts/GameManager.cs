@@ -64,14 +64,10 @@ public class GameManager : MonoBehaviour
     public GameObject buildingModeUI;
     [Tooltip("Parent transform for all placed blocks")]
     public Transform objectTransformMommy;
-    [Tooltip("Tiles to tint for player 1 in building mode")]
-    public GameObject[] spawnProtectionTiles;
-    [Tooltip("Tiles to tint for player 2 in building mode")]
-    public GameObject[] endProtectionTiles;
-    [Tooltip("Color to tint player 1 tiles")]
-    public Color SpawnProtectionTintColor = Color.white;
-    [Tooltip("Color to tint player 2 tiles")]
-    public Color EndProtectionTintColor = Color.black;
+    [Tooltip("GENESIS spawn point - 3x3 area around it is blocked")]
+    public Transform GENESIS;
+    [Tooltip("TERMINUS end point - 3x3 area around it is blocked")]
+    public Transform TERMINUS;
 
     private int roundCounter = 0;
     private bool isResetting = false;
@@ -682,88 +678,6 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    void TintBuildModeTiles()
-    {
-        // Tint player 1 tiles
-        if (spawnProtectionTiles != null)
-        {
-            foreach (GameObject tile in spawnProtectionTiles)
-            {
-                if (tile != null)
-                {
-                    SpriteRenderer sr = tile.GetComponent<SpriteRenderer>();
-                    if (sr != null)
-                    {
-                        // Store original color
-                        if (!player1TileOriginalColors.ContainsKey(tile))
-                        {
-                            player1TileOriginalColors[tile] = sr.color;
-                        }
-                        // Apply tint
-                        sr.color = SpawnProtectionTintColor;
-                    }
-                }
-            }
-        }
-
-        // Tint player 2 tiles
-        if (endProtectionTiles != null)
-        {
-            foreach (GameObject tile in endProtectionTiles)
-            {
-                if (tile != null)
-                {
-                    SpriteRenderer sr = tile.GetComponent<SpriteRenderer>();
-                    if (sr != null)
-                    {
-                        // Store original color
-                        if (!player2TileOriginalColors.ContainsKey(tile))
-                        {
-                            player2TileOriginalColors[tile] = sr.color;
-                        }
-                        // Apply tint
-                        sr.color = EndProtectionTintColor;
-                    }
-                }
-            }
-        }
-    }
-
-    void UntintBuildModeTiles()
-    {
-        // Restore player 1 tiles
-        if (spawnProtectionTiles != null)
-        {
-            foreach (GameObject tile in spawnProtectionTiles)
-            {
-                if (tile != null && player1TileOriginalColors.ContainsKey(tile))
-                {
-                    SpriteRenderer sr = tile.GetComponent<SpriteRenderer>();
-                    if (sr != null)
-                    {
-                        sr.color = player1TileOriginalColors[tile];
-                    }
-                }
-            }
-        }
-
-        // Restore player 2 tiles
-        if (endProtectionTiles != null)
-        {
-            foreach (GameObject tile in endProtectionTiles)
-            {
-                if (tile != null && player2TileOriginalColors.ContainsKey(tile))
-                {
-                    SpriteRenderer sr = tile.GetComponent<SpriteRenderer>();
-                    if (sr != null)
-                    {
-                        sr.color = player2TileOriginalColors[tile];
-                    }
-                }
-            }
-        }
-    }
-
     void EnterPickingMode()
     {
         isPickingMode = true;
@@ -1189,49 +1103,174 @@ public class GameManager : MonoBehaviour
         if (cursor == null)
             return;
         
-        // Get the appropriate block prefab for this player
+        // Get the appropriate block prefab and size for this player
         GameObject blockToPlace = null;
+        int blockSize = 1;
+        
         if (cursor.playerMode == Player.PlayerMode.Player1)
         {
             blockToPlace = player1SelectedBlock != null ? player1SelectedBlock : currentBlock;
+            if (player1SelectedBlock != null)
+            {
+                Block block = player1SelectedBlock.GetComponent<Block>();
+                if (block != null)
+                {
+                    blockSize = block.size;
+                }
+            }
         }
         else if (cursor.playerMode == Player.PlayerMode.Player2)
         {
             blockToPlace = player2SelectedBlock != null ? player2SelectedBlock : currentBlock;
+            if (player2SelectedBlock != null)
+            {
+                Block block = player2SelectedBlock.GetComponent<Block>();
+                if (block != null)
+                {
+                    blockSize = block.size;
+                }
+            }
         }
         
         if (blockToPlace == null)
             return;
 
-        // Get the currently hovered block from the cursor
-        Block hoveredBlock = cursor.GetCurrentBlock();
+        // Get the cursor's grid-aligned position
+        Vector3 blockPosition = cursor.transform.position;
+        
+        // Round to ensure it's on the grid (should already be snapped, but just to be safe)
+        blockPosition.x = Mathf.Round(blockPosition.x * 2f) / 2f;
+        blockPosition.y = Mathf.Round(blockPosition.y * 2f) / 2f;
+        blockPosition.z = 0f;
 
-        if (hoveredBlock != null)
+        // Spawn the block prefab at that position
+        GameObject placedBlock = Instantiate(blockToPlace, blockPosition, Quaternion.identity);
+        
+        // Set the parent to Object Transform Mommy
+        if (objectTransformMommy != null)
         {
-            // Get the position of the tinted square
-            Vector3 blockPosition = hoveredBlock.transform.position;
+            placedBlock.transform.SetParent(objectTransformMommy);
+        }
 
-            // Spawn the block prefab at that position
-            GameObject placedBlock = Instantiate(blockToPlace, blockPosition, Quaternion.identity);
+        // No need to manually track blocked positions - we scan dynamically
+
+        // Mark that this player has placed a block
+        hasPlacedBlock = true;
+
+        // Disable the cursor
+        cursor.DisableCursor();
+
+        // Check if both players have placed blocks
+        if (player1HasPlacedBlock && player2HasPlacedBlock)
+        {
+            StartCoroutine(ExitBuildingModeAndStartNewRound());
+        }
+    }
+
+
+    public bool IsPositionBlocked(Vector2 position)
+    {
+        // Round to grid to ensure consistent checking
+        Vector2 gridPos = new Vector2(
+            Mathf.Round(position.x * 2f) / 2f,
+            Mathf.Round(position.y * 2f) / 2f
+        );
+        
+        // Dynamically scan placed blocks and check if position is blocked
+        if (IsPositionBlockedByPlacedBlocks(gridPos))
+            return true;
+        
+        // Check if position is in 3x3 area around GENESIS
+        if (IsInProtectedArea(gridPos, GENESIS))
+            return true;
+        
+        // Check if position is in 3x3 area around TERMINUS
+        if (IsInProtectedArea(gridPos, TERMINUS))
+            return true;
+        
+        return false;
+    }
+
+    bool IsPositionBlockedByPlacedBlocks(Vector2 position)
+    {
+        if (objectTransformMommy == null)
+            return false;
+        
+        // Get all Block components under Object Transform Mommy
+        Block[] placedBlocks = objectTransformMommy.GetComponentsInChildren<Block>();
+        
+        foreach (Block block in placedBlocks)
+        {
+            if (block == null)
+                continue;
             
-            // Set the parent to Object Transform Mommy
-            if (objectTransformMommy != null)
+            // Get the block's anchor position
+            Vector2 anchor = new Vector2(block.transform.position.x, block.transform.position.y);
+            
+            // Calculate all positions this block occupies based on its size
+            System.Collections.Generic.List<Vector2> occupiedPositions = GetOccupiedPositions(anchor, block.size);
+            
+            // Check if the queried position matches any occupied position
+            foreach (Vector2 occupiedPos in occupiedPositions)
             {
-                placedBlock.transform.SetParent(objectTransformMommy);
-            }
-
-            // Mark that this player has placed a block
-            hasPlacedBlock = true;
-
-            // Disable the cursor
-            cursor.DisableCursor();
-
-            // Check if both players have placed blocks
-            if (player1HasPlacedBlock && player2HasPlacedBlock)
-            {
-                StartCoroutine(ExitBuildingModeAndStartNewRound());
+                if (Mathf.Abs(position.x - occupiedPos.x) < 0.01f && Mathf.Abs(position.y - occupiedPos.y) < 0.01f)
+                {
+                    return true;
+                }
             }
         }
+        
+        return false;
+    }
+
+    System.Collections.Generic.List<Vector2> GetOccupiedPositions(Vector2 anchor, int blockSize)
+    {
+        System.Collections.Generic.List<Vector2> positions = new System.Collections.Generic.List<Vector2>();
+        
+        if (blockSize == 1)
+        {
+            // Only the anchor position
+            positions.Add(anchor);
+        }
+        else if (blockSize == 2)
+        {
+            // 2 positions horizontally
+            positions.Add(anchor);
+            positions.Add(new Vector2(anchor.x + 0.5f, anchor.y));
+        }
+        else if (blockSize == 3)
+        {
+            // 3 positions horizontally
+            positions.Add(anchor);
+            positions.Add(new Vector2(anchor.x + 0.5f, anchor.y));
+            positions.Add(new Vector2(anchor.x + 1.0f, anchor.y));
+        }
+        else if (blockSize == 4)
+        {
+            // 2x2 grid
+            positions.Add(anchor);
+            positions.Add(new Vector2(anchor.x, anchor.y + 0.5f));
+            positions.Add(new Vector2(anchor.x + 0.5f, anchor.y));
+            positions.Add(new Vector2(anchor.x + 0.5f, anchor.y + 0.5f));
+        }
+        
+        return positions;
+    }
+
+    bool IsInProtectedArea(Vector2 position, Transform protectedTransform)
+    {
+        if (protectedTransform == null)
+            return false;
+        
+        Vector2 center = new Vector2(protectedTransform.position.x, protectedTransform.position.y);
+        
+        // Check if position is within 3x3 grid (1.0 unit in each direction from center)
+        // This creates a 3x3 grid: -0.5, 0, +0.5 in both X and Y
+        float deltaX = Mathf.Abs(position.x - center.x);
+        float deltaY = Mathf.Abs(position.y - center.y);
+        
+        // Within 1.0 units in both directions means it's in the 3x3 area
+        return deltaX <= 1.0f && deltaY <= 1.0f;
     }
 
     IEnumerator ExitBuildingModeAndStartNewRound()
@@ -1260,9 +1299,6 @@ public class GameManager : MonoBehaviour
             
             // Stop the timer during build mode
             isTimerRunning = false;
-            
-            // Tint build mode tiles
-            TintBuildModeTiles();
             
             // Disable players
             if (player1 != null)
@@ -1348,9 +1384,6 @@ public class GameManager : MonoBehaviour
             // Reset placement flags
             player1HasPlacedBlock = false;
             player2HasPlacedBlock = false;
-            
-            // Untint build mode tiles
-            UntintBuildModeTiles();
             
             // Stop the looping coroutine
             if (buildingModeCoroutine != null)
