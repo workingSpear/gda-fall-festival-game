@@ -31,14 +31,10 @@ public class GameManager : MonoBehaviour
     public TextMeshProUGUI player1BlockNameText;
     [Tooltip("Player 1 block sprite display")]
     public UnityEngine.UI.Image player1BlockImage;
-    [Tooltip("Player 1 block size display (array of 4 images)")]
-    public UnityEngine.UI.Image[] player1SizeImages;
     [Tooltip("Player 2 block name display")]
     public TextMeshProUGUI player2BlockNameText;
     [Tooltip("Player 2 block sprite display")]
     public UnityEngine.UI.Image player2BlockImage;
-    [Tooltip("Player 2 block size display (array of 4 images)")]
-    public UnityEngine.UI.Image[] player2SizeImages;
 
     [Header("Spawn Positions")]
     public Transform player1SpawnPoint;
@@ -69,11 +65,19 @@ public class GameManager : MonoBehaviour
     public Transform GENESIS;
     [Tooltip("TERMINUS end point - 3x3 area around it is blocked")]
     public Transform TERMINUS;
+    
+    [Header("Round Transition")]
+    [Tooltip("StaticNoise GameObject to show during round transitions")]
+    public GameObject StaticNoise;
+    [Tooltip("Duration to show StaticNoise between rounds")]
+    public float staticNoiseDuration = 2f;
 
     private int roundCounter = 0;
     private bool isResetting = false;
     private bool isPickingMode = false;
     private bool isBuildingMode = false;
+    public bool isExitingPickingMode = false;
+    public bool isMakingSelection = false;
     private Coroutine buildingModeCoroutine;
     private bool player1HasPlacedBlock = false;
     private bool player2HasPlacedBlock = false;
@@ -138,6 +142,12 @@ public class GameManager : MonoBehaviour
             SetPlayerVisibility(player2, false);
             SetPlayerPhysics(player2, false);
             player2.enabled = false;
+        }
+        
+        // Initialize StaticNoise as disabled
+        if (StaticNoise != null)
+        {
+            StaticNoise.SetActive(false);
         }
         
         // Start the spawn sequence with staggering for round 0
@@ -791,6 +801,7 @@ public class GameManager : MonoBehaviour
     void ExitPickingMode()
     {
         isPickingMode = false;
+        isExitingPickingMode = true;
         
         // Hide picking mode UI
         if (pickingModeUI != null)
@@ -805,7 +816,7 @@ public class GameManager : MonoBehaviour
         // ClearBlockInfo(Player.PlayerMode.Player1);
         // ClearBlockInfo(Player.PlayerMode.Player2);
         
-        // Disable cursors
+        // Disable cursors FIRST to prevent OnTriggerExit2D from clearing UI
         if (player1Cursor != null)
         {
             player1Cursor.DisableCursor();
@@ -816,7 +827,7 @@ public class GameManager : MonoBehaviour
             player2Cursor.DisableCursor();
         }
         
-        // Destroy all spawned pickable objects
+        // Now destroy all spawned pickable objects (cursors are disabled so no UI clearing)
         foreach (GameObject obj in spawnedPickableObjects)
         {
             if (obj != null)
@@ -828,6 +839,9 @@ public class GameManager : MonoBehaviour
         
         // Clear current pickable objects
         currentPickableObjects.Clear();
+        
+        // Reset the exit flag
+        isExitingPickingMode = false;
     }
 
     void FadePlacedObjects()
@@ -890,18 +904,6 @@ public class GameManager : MonoBehaviour
                 player1BlockImage.sprite = block.blockSprite;
                 player1BlockImage.enabled = true;
             }
-            
-            // Update size display (show first N images based on size)
-            if (player1SizeImages != null)
-            {
-                for (int i = 0; i < player1SizeImages.Length; i++)
-                {
-                    if (player1SizeImages[i] != null)
-                    {
-                        player1SizeImages[i].enabled = i < block.size;
-                    }
-                }
-            }
         }
         else if (playerMode == Player.PlayerMode.Player2)
         {
@@ -917,17 +919,6 @@ public class GameManager : MonoBehaviour
                 player2BlockImage.enabled = true;
             }
             
-            // Update size display (show first N images based on size)
-            if (player2SizeImages != null)
-            {
-                for (int i = 0; i < player2SizeImages.Length; i++)
-                {
-                    if (player2SizeImages[i] != null)
-                    {
-                        player2SizeImages[i].enabled = i < block.size;
-                    }
-                }
-            }
         }
     }
 
@@ -945,17 +936,7 @@ public class GameManager : MonoBehaviour
                 player1BlockImage.enabled = false;
             }
             
-            // Hide all size images
-            if (player1SizeImages != null)
-            {
-                for (int i = 0; i < player1SizeImages.Length; i++)
-                {
-                    if (player1SizeImages[i] != null)
-                    {
-                        player1SizeImages[i].enabled = false;
-                    }
-                }
-            }
+            
         }
         else if (playerMode == Player.PlayerMode.Player2)
         {
@@ -968,18 +949,7 @@ public class GameManager : MonoBehaviour
             {
                 player2BlockImage.enabled = false;
             }
-            
-            // Hide all size images
-            if (player2SizeImages != null)
-            {
-                for (int i = 0; i < player2SizeImages.Length; i++)
-                {
-                    if (player2SizeImages[i] != null)
-                    {
-                        player2SizeImages[i].enabled = false;
-                    }
-                }
-            }
+
         }
     }
 
@@ -1041,6 +1011,7 @@ public class GameManager : MonoBehaviour
 
     void MakeSelection(Cursor cursor, ref bool hasPicked)
     {
+        isMakingSelection = true;
         Debug.Log($"MakeSelection called for {cursor.playerMode}");
         
         // Get the object the cursor is currently hovering over
@@ -1111,6 +1082,9 @@ public class GameManager : MonoBehaviour
         {
             StartCoroutine(ExitPickingModeAndEnterBuildMode());
         }
+        
+        // Reset the selection flag
+        isMakingSelection = false;
     }
 
     IEnumerator ExitPickingModeAndEnterBuildMode()
@@ -1189,6 +1163,9 @@ public class GameManager : MonoBehaviour
 
         // Disable the cursor
         cursor.DisableCursor();
+        
+        // Clear the UI after placing the block
+        ClearBlockInfo(cursor.playerMode);
 
         // Check if both players have placed blocks
         if (player1HasPlacedBlock && player2HasPlacedBlock)
@@ -1307,6 +1284,21 @@ public class GameManager : MonoBehaviour
     {
         // Small delay to let the player see both blocks placed
         yield return new WaitForSeconds(0.5f);
+
+        // Show StaticNoise during round transition
+        if (StaticNoise != null)
+        {
+            StaticNoise.SetActive(true);
+        }
+        
+        // Wait for StaticNoise duration
+        yield return new WaitForSeconds(staticNoiseDuration);
+        
+        // Hide StaticNoise
+        if (StaticNoise != null)
+        {
+            StaticNoise.SetActive(false);
+        }
 
         // Start a new round (spawning begins)
         if (!isResetting)

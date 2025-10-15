@@ -539,12 +539,12 @@ public class Cursor : MonoBehaviour
                 currentPickableObject = null;
                 Debug.Log($"{playerMode} Cursor cleared currentPickableObject");
                 
-                // Clear the UI when exiting the collider
+                // Don't clear UI if we're exiting picking mode or making a selection (objects being destroyed)
                 GameObject gameManagerObj = GameObject.FindGameObjectWithTag("gamemanager");
                 if (gameManagerObj != null)
                 {
                     GameManager gameManager = gameManagerObj.GetComponent<GameManager>();
-                    if (gameManager != null)
+                    if (gameManager != null && !gameManager.isExitingPickingMode && !gameManager.isMakingSelection)
                     {
                         gameManager.ClearBlockInfo(playerMode);
                     }
