@@ -321,5 +321,8 @@ MonoBehaviour:
     targets.
   blockSprite: {fileID: -5123327587837605992, guid: ba8bd1a69d8589a4bb05733df555427f, type: 3}
   blockPrefab: {fileID: 2953617085689788972, guid: 50162a4aebe06e14bb2c037056889c8d, type: 3}
+  blockPrefabRigidBody: {fileID: 2953617085689788972}
   tint: {fileID: 0}
   originalColor: {r: 0, g: 0, b: 0, a: 0}
+  isDisabled: 0
+  spriteRenderer: {fileID: 0}

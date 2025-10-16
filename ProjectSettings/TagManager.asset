@@ -9,6 +9,13 @@ TagManager:
   - hazard
   - gamemanager
   - object
+  - bomb
+  - mommy
+  - drinkable
+  - clone
+  - turret
+  - endClone
+  - portal
   layers:
   - Default
   - TransparentFX
@@ -19,7 +26,7 @@ TagManager:
   - Clone
   - Player
   - BlockSelect
-  - 
+  - JumpableHead
   - 
   - 
   - 

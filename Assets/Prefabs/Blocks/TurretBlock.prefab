@@ -43,7 +43,7 @@ GameObject:
   - component: {fileID: 4710374200319627133}
   m_Layer: 0
   m_Name: TurretBlock
-  m_TagString: Untagged
+  m_TagString: turret
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -78,10 +78,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Block
   size: 1
   blockName: GLOCK
+  blockDescription: 
   blockSprite: {fileID: -5123327587837605992, guid: ba8bd1a69d8589a4bb05733df555427f, type: 3}
   blockPrefab: {fileID: 2953617085689788972}
+  blockPrefabRigidBody: {fileID: 2953617085689788972, guid: 7f178fb139b154945b1c3a4f2bce35f8, type: 3}
   tint: {fileID: 0}
   originalColor: {r: 0, g: 0, b: 0, a: 0}
+  isDisabled: 0
+  spriteRenderer: {fileID: 0}
 --- !u!1 &6151816909206094456
 GameObject:
   m_ObjectHideFlags: 0
@@ -187,9 +191,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ba1fbe5715da86544b57153a75dc0a49, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Turret
+  size: 1
+  blockName: Turret
+  blockDescription: 
+  blockSprite: {fileID: 0}
+  blockPrefab: {fileID: 0}
+  blockPrefabRigidBody: {fileID: 0}
+  tint: {fileID: 0}
+  originalColor: {r: 0, g: 0, b: 0, a: 0}
+  isDisabled: 0
+  spriteRenderer: {fileID: 5962658036564405897}
   projectilePrefab: {fileID: 8637294880294769088, guid: 549d2f8ab1f9ce74aa67ba2159d53f67, type: 3}
-  fireRate: 2
-  startDelay: 5
+  fireRate: 1
+  startDelay: 2
   firePoint: {fileID: 4930282574219841929}
   projectileSpeed: 10
   laserLine: {fileID: 5614239068805032139}
@@ -198,8 +212,8 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 4294967295
   laserColor: {r: 1, g: 0, b: 0, a: 1}
-  laserWidth: 0.01
-  maxTileRange: 7
+  laserWidth: 0.02
+  maxTileRange: 4
   tileSize: 0.5
   showRangeIndicator: 1
   rangeIndicatorColor: {r: 1, g: 0, b: 0, a: 0.3}

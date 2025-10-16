@@ -53,12 +53,17 @@ public class Player : MonoBehaviour
     private bool isGrounded;
     [HideInInspector]
     public bool hasBeenHitStopped = false;
+    [HideInInspector]
+    public bool hasInvertedControls = false;
     private bool wasGrounded;
     private float moveInput;
     private float jumpBufferCounter;
     private float coyoteTimeCounter;
     private float lastJumpTime;
     private bool isHoldingJump;
+    
+    // Portal teleportation cooldown
+    private bool canTeleport = true;
 
     void Start()
     {
@@ -171,9 +176,9 @@ public class Player : MonoBehaviour
             // Player 1 controls: A/D for movement, W for jump
             moveInput = 0f;
             if (Input.GetKey(KeyCode.A))
-                moveInput = -1f;
+                moveInput = hasInvertedControls ? 1f : -1f;
             if (Input.GetKey(KeyCode.D))
-                moveInput = 1f;
+                moveInput = hasInvertedControls ? -1f : 1f;
 
             // Set jump buffer when jump is pressed
             if (Input.GetKeyDown(KeyCode.W))
@@ -192,9 +197,9 @@ public class Player : MonoBehaviour
             // Player 2 controls: J/L for movement, I for jump
             moveInput = 0f;
             if (Input.GetKey(KeyCode.J))
-                moveInput = -1f;
+                moveInput = hasInvertedControls ? 1f : -1f;
             if (Input.GetKey(KeyCode.L))
-                moveInput = 1f;
+                moveInput = hasInvertedControls ? -1f : 1f;
 
             // Set jump buffer when jump is pressed
             if (Input.GetKeyDown(KeyCode.I))
@@ -214,6 +219,9 @@ public class Player : MonoBehaviour
     {
         // Reset hitstop flag
         hasBeenHitStopped = false;
+        
+        // Reset inverted controls flag
+        hasInvertedControls = false;
         
         // Restore sprite to normal state
         if (spriteRenderer != null)
@@ -276,6 +284,49 @@ public class Player : MonoBehaviour
                 gameManager.OnPlayerDeath(playerMode);
             }
         }
+        else if (other.CompareTag("portal"))
+        {
+            // Handle portal teleportation
+            Tear tear = other.GetComponent<Tear>();
+            if (tear != null && tear.IsLinked() && canTeleport && !tear.IsOnCooldown())
+            {
+                // Get the linked tear
+                Tear linkedTear = tear.GetLinkedTear();
+                if (linkedTear != null && linkedTear.gameObject.activeInHierarchy && !linkedTear.IsOnCooldown())
+                {
+                    // Teleport to the linked tear's position
+                    transform.position = linkedTear.transform.position;
+                    
+                    // Trigger cooldown on both tears
+                    tear.TriggerCooldown();
+                    linkedTear.TriggerCooldown();
+                    
+                    // Disable teleportation until player exits the trigger
+                    canTeleport = false;
+                    
+                    // Preserve velocity if player has rigidbody
+                    Rigidbody2D rb = GetComponent<Rigidbody2D>();
+                    if (rb != null)
+                    {
+                        // Keep the current velocity
+                        // (velocity is already preserved by the rigidbody)
+                    }
+                }
+            }
+        }
+        else if (other.CompareTag("drinkable"))
+        {
+            // Handle drinkable object interaction
+            Drinkable drinkable = other.GetComponent<Drinkable>();
+            if (drinkable != null)
+            {
+                DrinkManager drinkManager = FindFirstObjectByType<DrinkManager>();
+                if (drinkManager != null)
+                {
+                    drinkManager.ApplyDrinkEffect(drinkable.type, this, drinkable);
+                }
+            }
+        }
         else if (other.CompareTag("end"))
         {
             // Only allow one hitstop per player
@@ -306,8 +357,17 @@ public class Player : MonoBehaviour
             // Notify GameManager of player death (reaching end also counts as "death" for round-end logic)
             if (gameManager != null)
             {
-                gameManager.OnPlayerDeath(playerMode);
+                gameManager.OnPlayerDeath(playerMode, false); // false = not a real death, just reaching end
             }
+        }
+    }
+    
+    void OnTriggerExit2D(Collider2D other)
+    {
+        if (other.CompareTag("portal"))
+        {
+            // Re-enable teleportation when player exits the portal
+            canTeleport = true;
         }
     }
 

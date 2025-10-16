@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: -8423262722698207609}
   m_Layer: 6
   m_Name: Clone
-  m_TagString: Untagged
+  m_TagString: clone
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -191,6 +191,7 @@ MonoBehaviour:
   jumpableHead: {fileID: 2423208706425411161}
   spriteRenderer: {fileID: 8160529691683580892}
   hasBeenHitStopped: 0
+  hasInvertedControls: 0
   hitstopManager: {fileID: 0}
 --- !u!1 &7552506681297967486
 GameObject:
@@ -202,7 +203,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3700673041531831522}
   - component: {fileID: 2423208706425411161}
-  m_Layer: 3
+  m_Layer: 9
   m_Name: JumpableHead
   m_TagString: Untagged
   m_Icon: {fileID: 0}

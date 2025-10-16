@@ -28,6 +28,11 @@ public class Clone : MonoBehaviour
     private Color originalColor;
     [HideInInspector]
     public bool hasBeenHitStopped = false;
+    [HideInInspector]
+    public bool hasInvertedControls = false;
+    
+    // Portal teleportation cooldown
+    private bool canTeleport = true;
     [SerializeField] HitstopManager hitstopManager;
 
     void Awake()
@@ -83,7 +88,15 @@ public class Clone : MonoBehaviour
             // Apply the recorded velocity to rigidbody
             if (currentVelocityIndex < recordedVelocities.Length && rb != null)
             {
-                rb.linearVelocity = recordedVelocities[currentVelocityIndex];
+                Vector2 velocity = recordedVelocities[currentVelocityIndex];
+                
+                // Invert X component if controls are inverted
+                if (hasInvertedControls)
+                {
+                    velocity.x = -velocity.x;
+                }
+                
+                rb.linearVelocity = velocity;
                 currentVelocityIndex++;
             }
             else
@@ -94,10 +107,10 @@ public class Clone : MonoBehaviour
                 {
                     rb.linearVelocity = Vector2.zero;
                     
-                    // Make unmovable by physics when not in building mode
+                    // Keep clones movable after playback finishes
+                    // Only change visual appearance, not physics
                     if (!isBuildingMode)
                     {
-                        rb.bodyType = RigidbodyType2D.Kinematic;
                         TurnSpriteBlack();
                     }
                 }
@@ -199,8 +212,8 @@ public class Clone : MonoBehaviour
     {
         if (spriteRenderer != null)
         {
-            // Set to black with full opacity
-            spriteRenderer.color = new Color(0, 0, 0, 1f);
+            // Set to gray with full opacity
+            spriteRenderer.color = new Color(0.5f, 0.5f, 0.5f, 1f);
         }
     }
 
@@ -270,7 +283,37 @@ public class Clone : MonoBehaviour
                 hitstopManager.TriggerCloneHitstop(this, deathPrefab, false);
             }
         }
-        else if (other.CompareTag("end"))
+        else if (other.CompareTag("portal"))
+        {
+            // Handle portal teleportation
+            Tear tear = other.GetComponent<Tear>();
+            if (tear != null && tear.IsLinked() && canTeleport && !tear.IsOnCooldown())
+            {
+                // Get the linked tear
+                Tear linkedTear = tear.GetLinkedTear();
+                if (linkedTear != null && linkedTear.gameObject.activeInHierarchy && !linkedTear.IsOnCooldown())
+                {
+                    // Teleport to the linked tear's position
+                    transform.position = linkedTear.transform.position;
+                    
+                    // Trigger cooldown on both tears
+                    tear.TriggerCooldown();
+                    linkedTear.TriggerCooldown();
+                    
+                    // Disable teleportation until clone exits the trigger
+                    canTeleport = false;
+                    
+                    // Preserve velocity if clone has rigidbody
+                    Rigidbody2D rb = GetComponent<Rigidbody2D>();
+                    if (rb != null)
+                    {
+                        // Keep the current velocity
+                        // (velocity is already preserved by the rigidbody)
+                    }
+                }
+            }
+        }
+        else if (other.CompareTag("endClone"))
         {
             // Don't trigger end collision in building mode
             if (isBuildingMode)
@@ -302,6 +345,15 @@ public class Clone : MonoBehaviour
             {
                 hitstopManager.TriggerCloneHitstop(this, deathPrefab, true);
             }
+        }
+    }
+    
+    void OnTriggerExit2D(Collider2D other)
+    {
+        if (other.CompareTag("portal"))
+        {
+            // Re-enable teleportation when clone exits the portal
+            canTeleport = true;
         }
     }
 }

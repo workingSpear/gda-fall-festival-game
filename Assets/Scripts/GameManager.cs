@@ -71,10 +71,14 @@ public class GameManager : MonoBehaviour
     public GameObject pickingModeUI;
     [Tooltip("Array of selectable objects for picking mode")]
     public GameObject[] pickableObjects;
+    [Tooltip("Array of selectable drinks for picking mode")]
+    public GameObject[] pickableDrinks;
+    [Tooltip("Probability of spawning a drink instead of regular object (0.0 to 1.0)")]
+    [Range(0f, 1f)]
+    public float drinkSpawnProbability = 0.3f;
     
     [Header("Building Mode")]
     [Tooltip("Block prefab to place in building mode")]
-    public GameObject currentBlock;
     public GameObject buildingModeUI;
     [Tooltip("Parent transform for all placed blocks")]
     public Transform objectTransformMommy;
@@ -94,11 +98,26 @@ public class GameManager : MonoBehaviour
     public GameObject player1SpawnParticlePrefab;
     [Tooltip("Particle system prefab for Player 2 spawn")]
     public GameObject player2SpawnParticlePrefab;
+    
+    [Header("Game Ending UI")]
+    [Tooltip("TextMeshPro object for blocks placed message")]
+    public TextMeshPro blocksPlacedText;
+    [Tooltip("TextMeshPro object for recorded deaths message")]
+    public TextMeshPro recordedDeathsText;
+    [Tooltip("TextMeshPro object for winner message")]
+    public TextMeshPro winnerText;
+    
+    [Header("Game Ending Prefabs")]
+    [Tooltip("Player 1 rigidbody clone prefab for raining effect")]
+    public GameObject player1RigidbodyClone;
+    [Tooltip("Player 2 rigidbody clone prefab for raining effect")]
+    public GameObject player2RigidbodyClone;
 
     private int roundCounter = 0;
     private bool isResetting = false;
     private bool isPickingMode = false;
     private bool isBuildingMode = false;
+    private bool isWinMode = false;
     public bool isExitingPickingMode = false;
     public bool isMakingSelection = false;
     private Coroutine buildingModeCoroutine;
@@ -110,6 +129,8 @@ public class GameManager : MonoBehaviour
     [SerializeField]private GameObject player2SelectedBlock;
     private System.Collections.Generic.List<GameObject> currentPickableObjects = new System.Collections.Generic.List<GameObject>();
     private System.Collections.Generic.List<GameObject> spawnedPickableObjects = new System.Collections.Generic.List<GameObject>();
+    private System.Collections.Generic.List<GameObject> availablePickableDrinks = new System.Collections.Generic.List<GameObject>();
+    private System.Collections.Generic.List<GameObject> usedDrinks = new System.Collections.Generic.List<GameObject>();
     
     // Timer state
     private float timeRemaining = 0f;
@@ -117,9 +138,19 @@ public class GameManager : MonoBehaviour
     private bool hasTimedOut = false;
     private bool isTransitioning = false;
     
+    // Disabled blocks tracking
+    private System.Collections.Generic.List<Block> disabledBlocks = new System.Collections.Generic.List<Block>();
+    
     // Points tracking
-    private int player1Points = 0;
-    private int player2Points = 0;
+    [SerializeField]private int player1Points = 0;
+    [SerializeField]private int player2Points = 0;
+    
+    // Game ending tracking
+    private int totalBlocksPlaced = 0;
+    private int player1Deaths = 0;
+    private int player2Deaths = 0;
+    private bool gameEnded = false;
+    private System.Collections.Generic.List<GameObject> placedBlockPrefabs = new System.Collections.Generic.List<GameObject>();
     
     // Store original sprite renderer colors for placed objects
     private System.Collections.Generic.Dictionary<SpriteRenderer, Color> placedObjectOriginalColors = new System.Collections.Generic.Dictionary<SpriteRenderer, Color>();
@@ -127,6 +158,10 @@ public class GameManager : MonoBehaviour
     void Start()
     {
         Application.targetFrameRate = 144;
+        
+        // Reset used drinks for new game
+        usedDrinks.Clear();
+        
         UpdateRoundText();
         UpdatePointDisplays();
         
@@ -229,7 +264,7 @@ public class GameManager : MonoBehaviour
     void Update()
     {
         // Update timer during platforming mode
-        if (isTimerRunning && !isPickingMode && !isBuildingMode && !hasTimedOut)
+        if (isTimerRunning && !isPickingMode && !isBuildingMode && !isWinMode && !hasTimedOut)
         {
             timeRemaining -= Time.deltaTime;
             
@@ -245,14 +280,14 @@ public class GameManager : MonoBehaviour
         }
         
         // Picking mode selection
-        if (isPickingMode)
+        if (isPickingMode && !isWinMode)
         {
             // Player 1: Press Q to make selection
             if (Input.GetKeyDown(KeyCode.Q))
             {
                 if (!player1HasPicked && player1Cursor != null)
-                {
-                    MakeSelection(player1Cursor, ref player1HasPicked);
+            {
+                MakeSelection(player1Cursor, ref player1HasPicked);
                 }
             }
 
@@ -260,8 +295,8 @@ public class GameManager : MonoBehaviour
             if (Input.GetKeyDown(KeyCode.O))
             {
                 if (!player2HasPicked && player2Cursor != null)
-                {
-                    MakeSelection(player2Cursor, ref player2HasPicked);
+            {
+                MakeSelection(player2Cursor, ref player2HasPicked);
                 }
             }
         }
@@ -277,7 +312,7 @@ public class GameManager : MonoBehaviour
         }
 
         // Building mode block placement
-        if (isBuildingMode)
+        if (isBuildingMode && !isWinMode)
         {
             // Player 1: Press Q to place block
             if (Input.GetKeyDown(KeyCode.Q) && !player1HasPlacedBlock && player1Cursor != null)
@@ -295,6 +330,9 @@ public class GameManager : MonoBehaviour
 
     IEnumerator ResetAndStartNewRound(bool exitBuildingMode = false)
     {
+        // Don't allow new rounds during win mode
+        if (isWinMode) yield break;
+        
         isResetting = true;
         roundCounter++;
         UpdateRoundText();
@@ -485,10 +523,29 @@ public class GameManager : MonoBehaviour
         }
         
         UpdatePointDisplays();
+        
+        // Check for game ending condition
+        if (player1Points >= 15 || player2Points >= 15)
+        {
+            StartGameEndingSequence();
+        }
     }
 
-    public void OnPlayerDeath(Player.PlayerMode playerMode)
+    public void OnPlayerDeath(Player.PlayerMode playerMode, bool isRealDeath = true)
     {
+        // Track death for game ending (only real deaths, not reaching end)
+        if (isRealDeath)
+        {
+            if (playerMode == Player.PlayerMode.Player1)
+            {
+                player1Deaths++;
+            }
+            else if (playerMode == Player.PlayerMode.Player2)
+            {
+                player2Deaths++;
+            }
+        }
+        
         // Set ScoreModule to NotAlive when player dies
         SetScoreModuleAliveState(playerMode, false);
         
@@ -602,6 +659,9 @@ public class GameManager : MonoBehaviour
 
     IEnumerator TransitionToPickingMode()
     {
+        // Don't transition to picking mode during win mode
+        if (isWinMode) yield break;
+        
         // Small delay to let death effects complete
         yield return new WaitForSeconds(1f);
         
@@ -774,9 +834,138 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    public void RegisterDisabledBlocks(Collider2D[] colliders)
+    {
+        foreach (Collider2D col in colliders)
+        {
+            Block block = col.GetComponent<Block>();
+            if (block != null && block.isDisabled && !disabledBlocks.Contains(block))
+            {
+                disabledBlocks.Add(block);
+            }
+        }
+    }
+    
+    void ReEnableAllDisabledBlocks()
+    {
+        foreach (Block block in disabledBlocks)
+        {
+            if (block != null) // Check if block still exists (not destroyed)
+            {
+                block.EnableBlock();
+            }
+        }
+        
+        // Clear the list of disabled blocks
+        disabledBlocks.Clear();
+    }
+    
+    void ReEnableBombs()
+    {
+        // Find Object Transform Mommy
+        Transform objectTransformMommy = GameObject.FindGameObjectWithTag("mommy")?.transform;
+        if (objectTransformMommy == null)
+        {
+            return;
+        }
+        
+        // Get all objects with "bomb" tag under Object Transform Mommy
+        GameObject[] bombObjects = GameObject.FindGameObjectsWithTag("bomb");
+        
+        foreach (GameObject bombObject in bombObjects)
+        {
+            // Check if this bomb is a child of Object Transform Mommy
+            if (bombObject.transform.IsChildOf(objectTransformMommy))
+            {
+                Bomb bomb = bombObject.GetComponent<Bomb>();
+                if (bomb != null)
+                {
+                    // Force enable the bomb using its public method
+                    bomb.ForceEnableBomb();
+                }
+            }
+        }
+    }
+    
+    void ReEnableTurrets()
+    {
+        // Find Object Transform Mommy
+        Transform objectTransformMommy = GameObject.FindGameObjectWithTag("mommy")?.transform;
+        if (objectTransformMommy == null)
+        {
+            return;
+        }
+        
+        // Get all objects with "turret" tag under Object Transform Mommy
+        GameObject[] turretObjects = GameObject.FindGameObjectsWithTag("turret");
+        
+        foreach (GameObject turretObject in turretObjects)
+        {
+            // Check if this turret is a child of Object Transform Mommy
+            if (turretObject.transform.IsChildOf(objectTransformMommy))
+            {
+                Turret turret = turretObject.GetComponentInChildren<Turret>();
+                if (turret != null && turret.isDisabled)
+                {
+                    // Toggle off isDisabled flag
+                    turret.isDisabled = false;
+                    
+                    // Re-enable the sprite renderer from the Turret component
+                    if (turret.spriteRenderer != null)
+                    {
+                        turret.spriteRenderer.enabled = true;
+                    }
+                    
+                    // Re-enable all colliders
+                    Collider2D[] colliders = turretObject.GetComponents<Collider2D>();
+                    foreach (Collider2D col in colliders)
+                    {
+                        if (col != null)
+                        {
+                            col.enabled = true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    
+    void ResetDrinkEffects()
+    {
+        // Find DrinkManager and reset all drink effects
+        DrinkManager drinkManager = FindFirstObjectByType<DrinkManager>();
+        if (drinkManager != null)
+        {
+            drinkManager.ResetAllPlayerEffects();
+            drinkManager.ReEnableAllDrinkables();
+        }
+    }
+    
+    public bool IsInBuildingMode()
+    {
+        // Check if building mode UI is active
+        return buildingModeUI != null && buildingModeUI.activeInHierarchy;
+    }
+
     void EnterPickingMode()
     {
+        // Don't enter picking mode during win mode
+        if (isWinMode) return;
+        
         isPickingMode = true;
+        
+        // Re-enable all disabled blocks when entering picking mode
+        ReEnableAllDisabledBlocks();
+        
+        // Specifically re-enable bombs in Object Transform Mommy
+        ReEnableBombs();
+        
+        // Specifically re-enable turrets in Object Transform Mommy
+        ReEnableTurrets();
+        
+        // Reset all drink effects when entering picking mode
+        ResetDrinkEffects();
         
         // Stop the timer during picking mode
         isTimerRunning = false;
@@ -857,6 +1046,9 @@ public class GameManager : MonoBehaviour
 
     void ExitPickingMode()
     {
+        // Don't allow picking mode transitions during win mode
+        if (isWinMode) return;
+        
         isPickingMode = false;
         isExitingPickingMode = true;
         
@@ -1026,7 +1218,7 @@ public class GameManager : MonoBehaviour
             {
                 player2BlockImage.enabled = false;
             }
-
+            
         }
     }
 
@@ -1044,6 +1236,19 @@ public class GameManager : MonoBehaviour
         }
         spawnedPickableObjects.Clear();
         
+        // Reset available drinks list (only include unused drinks)
+        availablePickableDrinks.Clear();
+        if (pickableDrinks != null && pickableDrinks.Length > 0)
+        {
+            foreach (GameObject drink in pickableDrinks)
+            {
+                if (drink != null && !usedDrinks.Contains(drink))
+                {
+                    availablePickableDrinks.Add(drink);
+                }
+            }
+        }
+        
         if (pickableObjects == null || pickableObjects.Length == 0)
             return;
         
@@ -1058,12 +1263,41 @@ public class GameManager : MonoBehaviour
             availableIndices.Add(i);
         }
         
+        // First, decide if we should spawn a drink this round (only 1 per round)
+        bool shouldSpawnDrink = availablePickableDrinks.Count > 0 && Random.Range(0f, 1f) < drinkSpawnProbability;
+        GameObject drinkPrefab = null;
+        
+        if (shouldSpawnDrink)
+        {
+            // Select one drink for this round
+            int randomDrinkIndex = Random.Range(0, availablePickableDrinks.Count);
+            drinkPrefab = availablePickableDrinks[randomDrinkIndex];
+            
+            // Mark this drink as used (permanently)
+            usedDrinks.Add(drinkPrefab);
+            
+            // Remove the drink from available list so it can't be spawned again
+            availablePickableDrinks.RemoveAt(randomDrinkIndex);
+        }
+        
         // Randomly select and spawn objects
         for (int i = 0; i < numToSelect; i++)
         {
+            GameObject prefab = null;
+            
+            // If we decided to spawn a drink and this is the first spawn, spawn the drink
+            if (shouldSpawnDrink && i == 0 && drinkPrefab != null)
+            {
+                prefab = drinkPrefab;
+            }
+            else
+            {
+                // Spawn a regular object
             int randomIndex = Random.Range(0, availableIndices.Count);
             int selectedIndex = availableIndices[randomIndex];
-            GameObject prefab = pickableObjects[selectedIndex];
+                prefab = pickableObjects[selectedIndex];
+                availableIndices.RemoveAt(randomIndex);
+            }
             
             if (prefab != null)
             {
@@ -1076,10 +1310,7 @@ public class GameManager : MonoBehaviour
                 GameObject spawnedObj = Instantiate(prefab, spawnPosition, Quaternion.identity);
                 spawnedPickableObjects.Add(spawnedObj);
                 currentPickableObjects.Add(spawnedObj);
-                
             }
-            
-            availableIndices.RemoveAt(randomIndex);
         }
     }
 
@@ -1107,7 +1338,7 @@ public class GameManager : MonoBehaviour
         
         GameObject rootObject = block.gameObject;
         
-        
+        // Handle all objects (including drinks) as selectable blocks
         // Get the blockPrefab from the Block component
         GameObject blockPrefab = block.blockPrefab;
         
@@ -1187,7 +1418,7 @@ public class GameManager : MonoBehaviour
         
         if (cursor.playerMode == Player.PlayerMode.Player1)
         {
-            blockToPlace = player1SelectedBlock != null ? player1SelectedBlock : currentBlock;
+            blockToPlace = player1SelectedBlock;
             if (player1SelectedBlock != null)
             {
                 Block block = player1SelectedBlock.GetComponent<Block>();
@@ -1199,7 +1430,7 @@ public class GameManager : MonoBehaviour
         }
         else if (cursor.playerMode == Player.PlayerMode.Player2)
         {
-            blockToPlace = player2SelectedBlock != null ? player2SelectedBlock : currentBlock;
+            blockToPlace = player2SelectedBlock;
             if (player2SelectedBlock != null)
             {
                 Block block = player2SelectedBlock.GetComponent<Block>();
@@ -1221,7 +1452,7 @@ public class GameManager : MonoBehaviour
         blockPosition.y = Mathf.Round(blockPosition.y * 2f) / 2f;
         blockPosition.z = 0f;
 
-        // Spawn the block prefab at that position
+            // Spawn the block prefab at that position
         GameObject placedBlock = Instantiate(blockToPlace, blockPosition, Quaternion.identity);
         
         // Set the parent to Object Transform Mommy
@@ -1232,24 +1463,31 @@ public class GameManager : MonoBehaviour
 
         // No need to manually track blocked positions - we scan dynamically
 
-        // Mark that this player has placed a block
-        hasPlacedBlock = true;
+            // Mark that this player has placed a block
+            hasPlacedBlock = true;
 
+        // Track block placement for game ending (only during build mode)
+        if (isBuildingMode)
+        {
+            totalBlocksPlaced++;
+            placedBlockPrefabs.Add(blockToPlace);
+        }
+        
         // Set BuildModule to Ready when player places block
         SetBuildModuleReadyState(cursor.playerMode, true);
 
-        // Disable the cursor
-        cursor.DisableCursor();
+            // Disable the cursor
+            cursor.DisableCursor();
         
         // Clear the UI after placing the block
         ClearBlockInfo(cursor.playerMode);
 
-        // Check if both players have placed blocks
-        if (player1HasPlacedBlock && player2HasPlacedBlock)
-        {
-            StartCoroutine(ExitBuildingModeAndStartNewRound());
+            // Check if both players have placed blocks
+            if (player1HasPlacedBlock && player2HasPlacedBlock)
+            {
+                StartCoroutine(ExitBuildingModeAndStartNewRound());
+            }
         }
-    }
 
 
     public bool IsPositionBlocked(Vector2 position)
@@ -1259,6 +1497,10 @@ public class GameManager : MonoBehaviour
             Mathf.Round(position.x * 2f) / 2f,
             Mathf.Round(position.y * 2f) / 2f
         );
+        
+        // During building mode, block all positions on y=2
+        if (isBuildingMode && Mathf.Abs(gridPos.y - 2f) < 0.01f)
+            return true;
         
         // Dynamically scan placed blocks and check if position is blocked
         if (IsPositionBlockedByPlacedBlocks(gridPos))
@@ -1270,6 +1512,14 @@ public class GameManager : MonoBehaviour
         
         // Check if position is in 3x3 area around TERMINUS
         if (IsInProtectedArea(gridPos, TERMINUS))
+            return true;
+        
+        // Check if position is in 3x3 area around Player 1 spawn point
+        if (IsInProtectedArea(gridPos, player1SpawnPoint))
+            return true;
+        
+        // Check if position is in 3x3 area around Player 2 spawn point
+        if (IsInProtectedArea(gridPos, player2SpawnPoint))
             return true;
         
         return false;
@@ -1437,6 +1687,9 @@ public class GameManager : MonoBehaviour
 
     void ToggleBuildingMode()
     {
+        // Don't allow building mode transitions during win mode
+        if (isWinMode) return;
+        
         isBuildingMode = !isBuildingMode;
 
         if (isBuildingMode)
@@ -1785,6 +2038,291 @@ public class GameManager : MonoBehaviour
             
             // Destroy the particle effect after 2 seconds
             Destroy(particleEffect, 2f);
+        }
+    }
+    
+    void StartGameEndingSequence()
+    {
+        if (gameEnded) return; // Prevent multiple calls
+        
+        gameEnded = true;
+        Debug.Log("Game ending sequence started!");
+        
+        // Start the death and transition sequence
+        StartCoroutine(DeathAndTransitionSequence());
+    }
+    
+    IEnumerator DeathAndTransitionSequence()
+    {
+        // Kill all players and clones first
+        KillAllPlayersAndClones();
+        
+        // Wait a moment for deaths to process
+        yield return new WaitForSeconds(1f);
+        
+        // Show static transition
+        if (StaticNoise != null)
+        {
+            StaticNoise.SetActive(true);
+        }
+        
+        // Wait for static transition
+        yield return new WaitForSeconds(staticNoiseDuration);
+        
+        // Hide static
+        if (StaticNoise != null)
+        {
+            StaticNoise.SetActive(false);
+        }
+        
+        // Now enter win mode
+        isWinMode = true;
+        
+        // Exit any current modes
+        if (isPickingMode) ExitPickingMode();
+        if (isBuildingMode) ToggleBuildingMode();
+        
+        // Disable all game UI and cursors
+        if (player1Cursor != null) player1Cursor.DisableCursor();
+        if (player2Cursor != null) player2Cursor.DisableCursor();
+        
+        // Start the three-phase ending sequence
+        StartCoroutine(GameEndingSequence());
+    }
+    
+    void KillAllPlayersAndClones()
+    {
+        // Kill Player 1
+        if (player1 != null && !player1.hasBeenHitStopped)
+        {
+            player1.hasBeenHitStopped = true;
+            // Trigger hitstop effect for Player 1
+            if (hitstopManager != null)
+            {
+                GameObject deathPrefab = player1SpawnParticlePrefab; // Use spawn particle as death effect
+                hitstopManager.TriggerHitstop(player1, deathPrefab, false);
+            }
+        }
+        
+        // Kill Player 2
+        if (player2 != null && !player2.hasBeenHitStopped)
+        {
+            player2.hasBeenHitStopped = true;
+            // Trigger hitstop effect for Player 2
+            if (hitstopManager != null)
+            {
+                GameObject deathPrefab = player2SpawnParticlePrefab; // Use spawn particle as death effect
+                hitstopManager.TriggerHitstop(player2, deathPrefab, false);
+            }
+        }
+        
+        // Kill all Player 1 clones
+        if (cloneRecorder != null)
+        {
+            foreach (Clone clone in cloneRecorder.player1Clones)
+            {
+                if (clone != null && !clone.hasBeenHitStopped)
+                {
+                    clone.hasBeenHitStopped = true;
+                    // Trigger hitstop effect for clone
+                    if (hitstopManager != null)
+                    {
+                        GameObject deathPrefab = player1SpawnParticlePrefab;
+                        hitstopManager.TriggerCloneHitstop(clone, deathPrefab, false);
+                    }
+                }
+            }
+            
+            // Kill all Player 2 clones
+            foreach (Clone clone in cloneRecorder.player2Clones)
+            {
+                if (clone != null && !clone.hasBeenHitStopped)
+                {
+                    clone.hasBeenHitStopped = true;
+                    // Trigger hitstop effect for clone
+                    if (hitstopManager != null)
+                    {
+                        GameObject deathPrefab = player2SpawnParticlePrefab;
+                        hitstopManager.TriggerCloneHitstop(clone, deathPrefab, false);
+                    }
+                }
+            }
+        }
+    }
+    
+    IEnumerator GameEndingSequence()
+    {
+        // Phase 1: Blocks Placed
+        yield return StartCoroutine(Phase1_BlocksPlaced());
+        
+        // Phase 2: Recorded Deaths
+        yield return StartCoroutine(Phase2_RecordedDeaths());
+        
+        // Phase 3: Winner
+        yield return StartCoroutine(Phase3_Winner());
+    }
+    
+    IEnumerator Phase1_BlocksPlaced()
+    {
+        // Enable first text
+        if (blocksPlacedText != null)
+        {
+            blocksPlacedText.text = $"{totalBlocksPlaced} BLOCKS PLACED.";
+            blocksPlacedText.gameObject.SetActive(true);
+        }
+        
+        // Clear the map by disabling all objects under Object Transform Mommy
+        if (objectTransformMommy != null)
+        {
+            foreach (Transform child in objectTransformMommy)
+            {
+                if (child != null)
+                {
+                    child.gameObject.SetActive(false);
+                }
+            }
+        }
+        
+        // Get all blocks that were placed and make them rain down
+        yield return StartCoroutine(RainDownBlocks());
+        
+        // Wait a bit before next phase
+        yield return new WaitForSeconds(2f);
+    }
+    
+    IEnumerator Phase2_RecordedDeaths()
+    {
+        // Enable second text
+        if (recordedDeathsText != null)
+        {
+            int totalDeaths = player1Deaths + player2Deaths;
+            recordedDeathsText.text = $"{totalDeaths} RECORDED DEATHS.";
+            recordedDeathsText.gameObject.SetActive(true);
+        }
+        
+        // Rain down player rigidbody clones
+        yield return StartCoroutine(RainDownPlayerClones());
+        
+        // Wait a bit before next phase
+        yield return new WaitForSeconds(2f);
+    }
+    
+    IEnumerator Phase3_Winner()
+    {
+        // Wait 5 seconds before showing winner text
+        yield return new WaitForSeconds(5f);
+        
+        // Enable third text
+        if (winnerText != null)
+        {
+            winnerText.text = $"1 WINNER...";
+            winnerText.gameObject.SetActive(true);
+        }
+        
+        // Wait another 5 seconds before announcing the winner
+        yield return new WaitForSeconds(5f);
+        
+        // Announce the winner through RecordedDeathText
+        if (recordedDeathsText != null)
+        {
+            string winner = player1Points >= 15 ? "PLAYER 1" : "PLAYER 2";
+            recordedDeathsText.text = $"WINNER: {winner}";
+            recordedDeathsText.gameObject.SetActive(true);
+        }
+        
+        // Disable all other text objects
+        if (blocksPlacedText != null)
+        {
+            blocksPlacedText.gameObject.SetActive(false);
+        }
+        if (winnerText != null)
+        {
+            winnerText.gameObject.SetActive(false);
+        }
+    }
+    
+    IEnumerator RainDownBlocks()
+    {
+        // Spawn the rigidbody versions of blocks that were placed during build mode
+        for (int i = 0; i < placedBlockPrefabs.Count; i++)
+        {
+            // Random position above screen
+            Vector3 spawnPos = new Vector3(
+                Random.Range(-5f, 5f),
+                Random.Range(8f, 12f),
+                0f
+            );
+            
+            // Get the rigidbody prefab from the Block component
+            if (placedBlockPrefabs[i] != null)
+            {
+                Block blockComponent = placedBlockPrefabs[i].GetComponent<Block>();
+                if (blockComponent != null && blockComponent.blockPrefabRigidBody != null)
+                {
+                    // Spawn the rigidbody version of the block
+                    GameObject fallingBlock = Instantiate(blockComponent.blockPrefabRigidBody, spawnPos, Quaternion.identity);
+                    
+                    // Set random rotation
+                    fallingBlock.transform.rotation = Quaternion.Euler(0, 0, Random.Range(0f, 360f));
+                }
+                else
+                {
+                    // Fallback: spawn the original block and add rigidbody
+                    GameObject fallingBlock = Instantiate(placedBlockPrefabs[i], spawnPos, Quaternion.identity);
+                    
+                    // Add rigidbody if it doesn't have one
+                    Rigidbody2D rb = fallingBlock.GetComponent<Rigidbody2D>();
+                    if (rb == null)
+                    {
+                        rb = fallingBlock.AddComponent<Rigidbody2D>();
+                    }
+                    
+                    // Set random rotation
+                    fallingBlock.transform.rotation = Quaternion.Euler(0, 0, Random.Range(0f, 360f));
+                }
+            }
+            
+            // Wait 0.1 seconds between spawns
+            yield return new WaitForSeconds(0.1f);
+        }
+    }
+    
+    IEnumerator RainDownPlayerClones()
+    {
+        // Rain down Player 1 clones
+        for (int i = 0; i < player1Deaths; i++)
+        {
+            if (player1RigidbodyClone != null)
+            {
+                Vector3 spawnPos = new Vector3(
+                    Random.Range(-5f, 5f),
+                    Random.Range(8f, 12f),
+                    0f
+                );
+                
+                GameObject clone = Instantiate(player1RigidbodyClone, spawnPos, Quaternion.identity);
+                clone.transform.rotation = Quaternion.Euler(0, 0, Random.Range(0f, 360f));
+            }
+            
+            yield return new WaitForSeconds(0.1f);
+        }
+        
+        // Rain down Player 2 clones
+        for (int i = 0; i < player2Deaths; i++)
+        {
+            if (player2RigidbodyClone != null)
+            {
+                Vector3 spawnPos = new Vector3(
+                    Random.Range(-5f, 5f),
+                    Random.Range(8f, 12f),
+                    0f
+                );
+                
+                GameObject clone = Instantiate(player2RigidbodyClone, spawnPos, Quaternion.identity);
+                clone.transform.rotation = Quaternion.Euler(0, 0, Random.Range(0f, 360f));
+            }
+            
+            yield return new WaitForSeconds(0.1f);
         }
     }
 }

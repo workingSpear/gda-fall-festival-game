@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class Turret : MonoBehaviour
+public class Turret : Block
 {
     [Header("Turret Settings")]
     [Tooltip("Projectile prefab to fire")]
@@ -39,9 +39,17 @@ public class Turret : MonoBehaviour
     [SerializeField] private GameObject closestPlayer;
     private float nextFireTime = 0f;
     private float activationTime;
+    private GameObject previousTarget; // Track previous target to detect when target is lost
     
     void Start()
     {
+        // Initialize sprite renderer (since we override Start, we need to do this manually)
+        spriteRenderer = GetComponent<SpriteRenderer>();
+        if (spriteRenderer != null)
+        {
+            originalSpriteColor = spriteRenderer.color;
+        }
+        
         // Set the activation time (when turret can start firing)
         activationTime = Time.time + startDelay;
         
@@ -75,8 +83,30 @@ public class Turret : MonoBehaviour
     
     void Update()
     {
+        // Don't function if disabled
+        if (isDisabled)
+        {
+            return;
+        }
+        
         // Find the closest player
         FindClosestPlayer();
+        
+        // Check if target was lost and reset fire cooldown
+        if (previousTarget != null && closestPlayer == null)
+        {
+            // Target was lost, reset fire cooldown
+            nextFireTime = Time.time + fireRate;
+        }
+        // Check if a new target was acquired (no target before, target now)
+        else if (previousTarget == null && closestPlayer != null)
+        {
+            // New target acquired, reset fire cooldown
+            nextFireTime = Time.time + fireRate;
+        }
+        
+        // Update previous target
+        previousTarget = closestPlayer;
         
         // Aim at the closest player (even during start delay)
         if (closestPlayer != null)
@@ -117,7 +147,15 @@ public class Turret : MonoBehaviour
         // Find all objects with the "Player" tag
         GameObject[] players = GameObject.FindGameObjectsWithTag("Player");
         
-        if (players.Length == 0)
+        // Find all objects with the "clone" tag
+        GameObject[] clones = GameObject.FindGameObjectsWithTag("clone");
+        
+        // Combine both arrays
+        GameObject[] allTargets = new GameObject[players.Length + clones.Length];
+        players.CopyTo(allTargets, 0);
+        clones.CopyTo(allTargets, players.Length);
+        
+        if (allTargets.Length == 0)
         {
             closestPlayer = null;
             return;
@@ -127,23 +165,30 @@ public class Turret : MonoBehaviour
         float closestDistance = Mathf.Infinity;
         float maxRangeInUnits = maxTileRange * tileSize;
         
-        // Find the closest enabled player within tile range
-        foreach (GameObject player in players)
+        // Find the closest enabled target within tile range
+        foreach (GameObject target in allTargets)
         {
-            // Check if the player's Player component is enabled
-            Player playerComponent = player.GetComponent<Player>();
-            if (playerComponent == null || !playerComponent.enabled)
+            // Check if it's a player and if the Player component is enabled
+            Player playerComponent = target.GetComponent<Player>();
+            if (playerComponent != null && !playerComponent.enabled)
             {
                 continue; // Skip disabled players
             }
             
-            float distance = Vector2.Distance(transform.position, player.transform.position);
+            // Check if it's a clone and if it's not been hitstopped
+            Clone cloneComponent = target.GetComponent<Clone>();
+            if (cloneComponent != null && cloneComponent.hasBeenHitStopped)
+            {
+                continue; // Skip hitstopped clones
+            }
             
-            // Only consider players within the tile range
+            float distance = Vector2.Distance(transform.position, target.transform.position);
+            
+            // Only consider targets within the tile range
             if (distance <= maxRangeInUnits && distance < closestDistance)
             {
                 closestDistance = distance;
-                closest = player;
+                closest = target;
             }
         }
         
@@ -258,5 +303,53 @@ public class Turret : MonoBehaviour
         // Optional: Draw diagonal lines to make it more visible
         Debug.DrawLine(topLeft, bottomRight, rangeIndicatorColor);
         Debug.DrawLine(topRight, bottomLeft, rangeIndicatorColor);
+    }
+    
+    protected override void DisableBlockBehavior()
+    {
+        // Hide laser line when disabled
+        if (laserLine != null)
+        {
+            laserLine.enabled = false;
+        }
+        
+        // Stop turret behavior without disabling the component
+        // The Block's DisableBlock() will handle sprite renderer and colliders
+        // We just need to stop the turret from shooting
+        isDisabled = true;
+    }
+    
+    protected override void EnableBlockBehavior()
+    {
+        // Re-enable the turret's functionality
+        isDisabled = false;
+    }
+    
+    public void ForceEnableTurret()
+    {
+        // Force enable the turret completely
+        isDisabled = false;
+        
+        // Force enable the sprite renderer
+        if (spriteRenderer != null)
+        {
+            spriteRenderer.enabled = true;
+        }
+        
+        // Force enable all colliders
+        Collider2D[] colliders = GetComponents<Collider2D>();
+        foreach (Collider2D col in colliders)
+        {
+            if (col != null)
+            {
+                col.enabled = true;
+            }
+        }
+        
+        // Force enable this component (Turret script)
+        this.enabled = true;
+        
+        // Ensure isDisabled is false
+        isDisabled = false;
     }
 }

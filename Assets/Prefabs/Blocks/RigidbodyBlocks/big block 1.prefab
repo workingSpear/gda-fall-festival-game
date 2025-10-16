@@ -157,8 +157,11 @@ MonoBehaviour:
   blockDescription: On a diet. Used for platforming.
   blockSprite: {fileID: 3641931977962690872, guid: 42596ab4a39f8b44ba67e0bacd02a658, type: 3}
   blockPrefab: {fileID: 3897939434625992821, guid: b50dbc0f287bbf34b9dc44e43bb3ce98, type: 3}
+  blockPrefabRigidBody: {fileID: 0}
   tint: {fileID: 0}
   originalColor: {r: 0, g: 0, b: 0, a: 0}
+  isDisabled: 0
+  spriteRenderer: {fileID: 0}
 --- !u!50 &8377966487840820739
 Rigidbody2D:
   serializedVersion: 5

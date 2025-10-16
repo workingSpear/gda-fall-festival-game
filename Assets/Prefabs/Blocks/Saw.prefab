@@ -106,10 +106,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Block
   size: 1
   blockName: SAW
+  blockDescription: 
   blockSprite: {fileID: -2850130919828143354, guid: 9682fa7464c809b42b5cc4222ef6b85a, type: 3}
   blockPrefab: {fileID: 0}
+  blockPrefabRigidBody: {fileID: 2268168810339546747, guid: 843f0b69a62d964448573c908e36aa9f, type: 3}
   tint: {fileID: 0}
   originalColor: {r: 0, g: 0, b: 0, a: 0}
+  isDisabled: 0
+  spriteRenderer: {fileID: 0}
 --- !u!61 &2716209705788871973
 BoxCollider2D:
   m_ObjectHideFlags: 0

@@ -111,8 +111,11 @@ MonoBehaviour:
   blockDescription: Kills upon contact. Good idea to lick.
   blockSprite: {fileID: -2850130919828143354, guid: 9682fa7464c809b42b5cc4222ef6b85a, type: 3}
   blockPrefab: {fileID: 2268168810339546747, guid: fc9e3693b12c7994c852e9db778a7aad, type: 3}
+  blockPrefabRigidBody: {fileID: 2268168810339546747}
   tint: {fileID: 0}
   originalColor: {r: 0, g: 0, b: 0, a: 0}
+  isDisabled: 0
+  spriteRenderer: {fileID: 0}
 --- !u!58 &5051107935326993549
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -174,7 +177,7 @@ Rigidbody2D:
     m_Bits: 0
   m_Interpolate: 0
   m_SleepingMode: 1
-  m_CollisionDetection: 1
+  m_CollisionDetection: 0
   m_Constraints: 0
 --- !u!1 &3112565117927841754
 GameObject:

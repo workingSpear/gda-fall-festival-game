@@ -35,6 +35,14 @@ public class HitstopManager : MonoBehaviour
     [Header("End Settings")]
     [Tooltip("Particle system prefab to spawn when reaching the end")]
     public GameObject endParticlePrefab;
+    
+    [Header("Sprite Cycling Settings")]
+    [Tooltip("Array of SpriteRenderers to cycle through after each hitstop")]
+    public SpriteRenderer[] cyclingSprites;
+    [Tooltip("Color to tint sprites when Player 1 triggers hitstop")]
+    public Color player1TintColor = Color.red;
+    [Tooltip("Color to tint sprites when Player 2 triggers hitstop")]
+    public Color player2TintColor = Color.blue;
 
     private int activeHitstops = 0; // Track how many hitstops are active
     private List<EffectInfo> pendingEffects = new List<EffectInfo>();
@@ -45,6 +53,9 @@ public class HitstopManager : MonoBehaviour
     private bool isInBuffer = false; // Track if we're in buffer period
     private bool hasPlayerDied = false; // Track if a player (not clone) has died
     private Coroutine continuousShakeCoroutine; // Track continuous shake coroutine
+    private int currentSpriteIndex = 0; // Track which sprite to enable next
+    private Coroutine disableSpritesCoroutine; // Track the disable sprites coroutine
+    private Color[] originalSpriteColors; // Store original colors of cycling sprites
 
     private class EffectInfo
     {
@@ -155,6 +166,9 @@ public class HitstopManager : MonoBehaviour
             player.jumpableHead.enabled = false;
         }
         
+        // Cycle through SpriteRenderers before time freeze
+        CycleSprites(player.playerMode);
+        
         // Track active hitstops and freeze time
         activeHitstops++;
         Time.timeScale = 0f;
@@ -186,9 +200,6 @@ public class HitstopManager : MonoBehaviour
         if (playerDeathScreenShake != null && continuousShakeCoroutine == null && sharedBufferEndTime > Time.realtimeSinceStartup)
         {
             continuousShakeCoroutine = StartCoroutine(ContinuousShakeDuringBuffer());
-        }
-        else if (sharedBufferEndTime <= Time.realtimeSinceStartup)
-        {
         }
         
         // Wait for the SHARED buffer to end (not a local buffer)
@@ -295,6 +306,9 @@ public class HitstopManager : MonoBehaviour
         {
             clone.jumpableHead.enabled = false;
         }
+        
+        // Cycle through SpriteRenderers before time freeze
+        CycleSprites(clone.playerMode);
         
         // Track active hitstops and freeze time
         activeHitstops++;
@@ -418,6 +432,13 @@ public class HitstopManager : MonoBehaviour
             hitStop.enabled = false;
         }
         
+        // Stop any existing disable sprites coroutine and start a new one
+        if (disableSpritesCoroutine != null)
+        {
+            StopCoroutine(disableSpritesCoroutine);
+        }
+        disableSpritesCoroutine = StartCoroutine(DisableSpritesAfterBuffer());
+        
         // STEP 2: Spawn all effect prefabs and collect their particle systems
         List<ParticleSystem> particleSystems = new List<ParticleSystem>();
         
@@ -486,9 +507,6 @@ public class HitstopManager : MonoBehaviour
                 float shakeIntensity = deathShakeIntensity * playerDeathShakeMultiplier;
                 playerDeathScreenShake.Shake(playerDeathShakeBurstDuration, shakeIntensity);
             }
-            else
-            {
-            }
             
             // Wait for configurable interval before next shake (use realtime since time might be frozen)
             yield return new WaitForSecondsRealtime(playerDeathShakeBurstInterval);
@@ -520,6 +538,135 @@ public class HitstopManager : MonoBehaviour
         if (hitStop != null)
         {
             hitStop.color = baseColor;
+        }
+    }
+    
+    void CycleSprites(Player.PlayerMode playerMode)
+    {
+        Debug.Log($"CycleSprites called. Array length: {(cyclingSprites != null ? cyclingSprites.Length : 0)}, Current index: {currentSpriteIndex}, In buffer: {isInBuffer}, Player: {playerMode}");
+        
+        // Only proceed if we have a valid array
+        if (cyclingSprites == null || cyclingSprites.Length == 0)
+        {
+            Debug.Log("Cycling sprites array is null or empty");
+            return;
+        }
+        
+        // Initialize original colors if not done yet
+        if (originalSpriteColors == null || originalSpriteColors.Length != cyclingSprites.Length)
+        {
+            InitializeOriginalColors();
+        }
+        
+        // If we're in buffer period, just enable the next sprite without disabling others
+        if (isInBuffer)
+        {
+            Debug.Log("In buffer period - enabling next sprite without disabling others");
+            if (cyclingSprites[currentSpriteIndex] != null)
+            {
+                cyclingSprites[currentSpriteIndex].enabled = true;
+                ApplyTintToSprite(cyclingSprites[currentSpriteIndex], playerMode);
+                Debug.Log($"Enabled additional sprite at index {currentSpriteIndex}: {cyclingSprites[currentSpriteIndex].name}");
+            }
+        }
+        else
+        {
+            // Not in buffer - disable all and enable only current sprite
+            foreach (SpriteRenderer sprite in cyclingSprites)
+            {
+                if (sprite != null)
+                {
+                    sprite.enabled = false;
+                }
+            }
+            
+            // Enable ONLY the current sprite
+            if (cyclingSprites[currentSpriteIndex] != null)
+            {
+                cyclingSprites[currentSpriteIndex].enabled = true;
+                ApplyTintToSprite(cyclingSprites[currentSpriteIndex], playerMode);
+                Debug.Log($"Enabled ONLY sprite at index {currentSpriteIndex}: {cyclingSprites[currentSpriteIndex].name}");
+            }
+        }
+        
+        // Move to next sprite for next hitstop (cycle back to 0 if at end)
+        currentSpriteIndex = (currentSpriteIndex + 1) % cyclingSprites.Length;
+    }
+    
+    IEnumerator DisableSpritesAfterBuffer()
+    {
+        Debug.Log($"DisableSpritesAfterBuffer started, waiting for buffer to end at {sharedBufferEndTime}");
+        
+        // Wait for the buffer period to end
+        while (Time.realtimeSinceStartup < sharedBufferEndTime)
+        {
+            yield return null;
+        }
+        
+        Debug.Log("Buffer ended, disabling all cycling sprites and resetting cycle");
+        
+        // Disable all cycling sprites after buffer ends
+        if (cyclingSprites != null)
+        {
+            foreach (SpriteRenderer sprite in cyclingSprites)
+            {
+                if (sprite != null)
+                {
+                    sprite.enabled = false;
+                    Debug.Log($"Disabled sprite: {sprite.name}");
+                }
+            }
+        }
+        
+        // Reset sprite colors to original
+        ResetSpriteColors();
+        
+        // Reset the cycle to the first sprite
+        currentSpriteIndex = 0;
+        Debug.Log("Reset sprite cycle to index 0");
+        
+        // Clear the coroutine reference
+        disableSpritesCoroutine = null;
+    }
+    
+    void InitializeOriginalColors()
+    {
+        if (cyclingSprites != null)
+        {
+            originalSpriteColors = new Color[cyclingSprites.Length];
+            for (int i = 0; i < cyclingSprites.Length; i++)
+            {
+                if (cyclingSprites[i] != null)
+                {
+                    originalSpriteColors[i] = cyclingSprites[i].color;
+                }
+            }
+            Debug.Log($"Initialized original colors for {cyclingSprites.Length} sprites");
+        }
+    }
+    
+    void ApplyTintToSprite(SpriteRenderer sprite, Player.PlayerMode playerMode)
+    {
+        if (sprite != null)
+        {
+            Color tintColor = playerMode == Player.PlayerMode.Player1 ? player1TintColor : player2TintColor;
+            sprite.color = tintColor;
+            Debug.Log($"Applied {tintColor} tint to sprite {sprite.name} for {playerMode}");
+        }
+    }
+    
+    void ResetSpriteColors()
+    {
+        if (cyclingSprites != null && originalSpriteColors != null)
+        {
+            for (int i = 0; i < cyclingSprites.Length; i++)
+            {
+                if (cyclingSprites[i] != null && i < originalSpriteColors.Length)
+                {
+                    cyclingSprites[i].color = originalSpriteColors[i];
+                }
+            }
+            Debug.Log("Reset all sprite colors to original");
         }
     }
 }
