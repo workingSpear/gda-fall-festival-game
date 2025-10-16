@@ -4,11 +4,6 @@ using System.Collections;
 
 public class GameManager : MonoBehaviour
 {
-
-    //debugging key commands
-    //p to reset and start new round
-    //y enable building mode
-
     [Header("References")]
     public Player player1;
     public Player player2;
@@ -29,12 +24,34 @@ public class GameManager : MonoBehaviour
     [Header("Picking Mode UI")]
     [Tooltip("Player 1 block name display")]
     public TextMeshProUGUI player1BlockNameText;
+    [Tooltip("Player 1 block description display")]
+    public TextMeshProUGUI player1BlockDescriptionText;
     [Tooltip("Player 1 block sprite display")]
     public UnityEngine.UI.Image player1BlockImage;
     [Tooltip("Player 2 block name display")]
     public TextMeshProUGUI player2BlockNameText;
+    [Tooltip("Player 2 block description display")]
+    public TextMeshProUGUI player2BlockDescriptionText;
     [Tooltip("Player 2 block sprite display")]
     public UnityEngine.UI.Image player2BlockImage;
+    
+    [Header("Status Indicators")]
+    [Tooltip("Build module P1 ready indicator")]
+    public UnityEngine.UI.Image BuildModuleP1Ready;
+    [Tooltip("Build module P1 not ready indicator")]
+    public UnityEngine.UI.Image BuildModuleP1NotReady;
+    [Tooltip("Score module P1 alive indicator")]
+    public UnityEngine.UI.Image ScoreModuleP1Alive;
+    [Tooltip("Score module P1 not alive indicator")]
+    public UnityEngine.UI.Image ScoreModuleP1NotAlive;
+    [Tooltip("Build module P2 ready indicator")]
+    public UnityEngine.UI.Image BuildModuleP2Ready;
+    [Tooltip("Build module P2 not ready indicator")]
+    public UnityEngine.UI.Image BuildModuleP2NotReady;
+    [Tooltip("Score module P2 alive indicator")]
+    public UnityEngine.UI.Image ScoreModuleP2Alive;
+    [Tooltip("Score module P2 not alive indicator")]
+    public UnityEngine.UI.Image ScoreModuleP2NotAlive;
 
     [Header("Spawn Positions")]
     public Transform player1SpawnPoint;
@@ -71,6 +88,12 @@ public class GameManager : MonoBehaviour
     public GameObject StaticNoise;
     [Tooltip("Duration to show StaticNoise between rounds")]
     public float staticNoiseDuration = 2f;
+    
+    [Header("Player Spawn Effects")]
+    [Tooltip("Particle system prefab for Player 1 spawn")]
+    public GameObject player1SpawnParticlePrefab;
+    [Tooltip("Particle system prefab for Player 2 spawn")]
+    public GameObject player2SpawnParticlePrefab;
 
     private int roundCounter = 0;
     private bool isResetting = false;
@@ -87,7 +110,6 @@ public class GameManager : MonoBehaviour
     [SerializeField]private GameObject player2SelectedBlock;
     private System.Collections.Generic.List<GameObject> currentPickableObjects = new System.Collections.Generic.List<GameObject>();
     private System.Collections.Generic.List<GameObject> spawnedPickableObjects = new System.Collections.Generic.List<GameObject>();
-    private System.Collections.Generic.Dictionary<GameObject, GameObject> instanceToPrefabMap = new System.Collections.Generic.Dictionary<GameObject, GameObject>();
     
     // Timer state
     private float timeRemaining = 0f;
@@ -98,10 +120,6 @@ public class GameManager : MonoBehaviour
     // Points tracking
     private int player1Points = 0;
     private int player2Points = 0;
-    
-    // Store original tile colors for restoration
-    private System.Collections.Generic.Dictionary<GameObject, Color> player1TileOriginalColors = new System.Collections.Generic.Dictionary<GameObject, Color>();
-    private System.Collections.Generic.Dictionary<GameObject, Color> player2TileOriginalColors = new System.Collections.Generic.Dictionary<GameObject, Color>();
     
     // Store original sprite renderer colors for placed objects
     private System.Collections.Generic.Dictionary<SpriteRenderer, Color> placedObjectOriginalColors = new System.Collections.Generic.Dictionary<SpriteRenderer, Color>();
@@ -163,17 +181,33 @@ public class GameManager : MonoBehaviour
             SetPlayerVisibility(player1, true);
             SetPlayerPhysics(player1, true);
             player1.enabled = true;
+            
+            // Set ScoreModule to Alive when player spawns
+            SetScoreModuleAliveState(Player.PlayerMode.Player1, true);
+            
+            // Spawn particle effect for Player 1
+            SpawnPlayerParticleEffect(Player.PlayerMode.Player1, player1.transform.position);
+            
+            // Play spawn buzzer sound
+            if (audioManager != null)
+            {
+                audioManager.PlayPlayerSpawnBuzzer();
+            }
         }
         
-        // Wait before spawning player 2
-        yield return new WaitForSeconds(cloneSpawnDelay);
-        
+        // Spawn player 2 simultaneously (no delay)
         if (player2 != null)
         {
             player2.ResetPlayer();
             SetPlayerVisibility(player2, true);
             SetPlayerPhysics(player2, true);
             player2.enabled = true;
+            
+            // Set ScoreModule to Alive when player spawns
+            SetScoreModuleAliveState(Player.PlayerMode.Player2, true);
+            
+            // Spawn particle effect for Player 2
+            SpawnPlayerParticleEffect(Player.PlayerMode.Player2, player2.transform.position);
         }
         
         // Start countdown timer for round 0
@@ -188,6 +222,8 @@ public class GameManager : MonoBehaviour
             cloneRecorder.StartRecording(Player.PlayerMode.Player1);
             cloneRecorder.StartRecording(Player.PlayerMode.Player2);
         }
+        
+        yield break;
     }
 
     void Update()
@@ -214,7 +250,6 @@ public class GameManager : MonoBehaviour
             // Player 1: Press Q to make selection
             if (Input.GetKeyDown(KeyCode.Q))
             {
-                Debug.Log($"Q pressed! player1HasPicked={player1HasPicked}, player1Cursor={player1Cursor}");
                 if (!player1HasPicked && player1Cursor != null)
                 {
                     MakeSelection(player1Cursor, ref player1HasPicked);
@@ -224,7 +259,6 @@ public class GameManager : MonoBehaviour
             // Player 2: Press O to make selection
             if (Input.GetKeyDown(KeyCode.O))
             {
-                Debug.Log($"O pressed! player2HasPicked={player2HasPicked}, player2Cursor={player2Cursor}");
                 if (!player2HasPicked && player2Cursor != null)
                 {
                     MakeSelection(player2Cursor, ref player2HasPicked);
@@ -265,11 +299,6 @@ public class GameManager : MonoBehaviour
         roundCounter++;
         UpdateRoundText();
         
-        // Crossfade to platformer music
-        if (audioManager != null)
-        {
-            audioManager.CrossfadeToPlatformer();
-        }
 
         // Stop current recording and create clone
         if (cloneRecorder != null)
@@ -334,9 +363,10 @@ public class GameManager : MonoBehaviour
             }
         }
 
-        // Exit building mode if needed
+        // Exit building mode if needed (with StaticNoise transition)
         if (exitBuildingMode && isBuildingMode)
         {
+            yield return StartCoroutine(ShowStaticNoiseTransition());
             ToggleBuildingMode();
         }
         
@@ -381,17 +411,33 @@ public class GameManager : MonoBehaviour
             SetPlayerVisibility(player1, true);
             SetPlayerPhysics(player1, true);
             player1.enabled = true;
+            
+            // Set ScoreModule to Alive when player spawns
+            SetScoreModuleAliveState(Player.PlayerMode.Player1, true);
+            
+            // Spawn particle effect for Player 1
+            SpawnPlayerParticleEffect(Player.PlayerMode.Player1, player1.transform.position);
+            
+            // Play spawn buzzer sound
+            if (audioManager != null)
+            {
+                audioManager.PlayPlayerSpawnBuzzer();
+            }
         }
         
-        // Wait before spawning player 2
-        yield return new WaitForSeconds(cloneSpawnDelay);
-
+        // Spawn player 2 simultaneously (no delay)
         if (player2 != null)
         {
             player2.ResetPlayer();
             SetPlayerVisibility(player2, true);
             SetPlayerPhysics(player2, true);
             player2.enabled = true;
+            
+            // Set ScoreModule to Alive when player spawns
+            SetScoreModuleAliveState(Player.PlayerMode.Player2, true);
+            
+            // Spawn particle effect for Player 2
+            SpawnPlayerParticleEffect(Player.PlayerMode.Player2, player2.transform.position);
         }
 
         // Start countdown timer when all players have spawned
@@ -443,6 +489,9 @@ public class GameManager : MonoBehaviour
 
     public void OnPlayerDeath(Player.PlayerMode playerMode)
     {
+        // Set ScoreModule to NotAlive when player dies
+        SetScoreModuleAliveState(playerMode, false);
+        
         // Check if both players are now dead
         bool bothPlayersDead = false;
         
@@ -556,6 +605,9 @@ public class GameManager : MonoBehaviour
         // Small delay to let death effects complete
         yield return new WaitForSeconds(1f);
         
+        // Show StaticNoise during transition to picking mode
+        yield return StartCoroutine(ShowStaticNoiseTransition());
+        
         // Increment round counter
         roundCounter++;
         UpdateRoundText();
@@ -598,12 +650,22 @@ public class GameManager : MonoBehaviour
             EnterPickingMode();
         }
         
+        // Reset BuildModules to NotReady state for picking mode
+        SetBuildModuleReadyState(Player.PlayerMode.Player1, false);
+        SetBuildModuleReadyState(Player.PlayerMode.Player2, false);
+        
         // Reset transition flag after picking mode is active
         isTransitioning = false;
     }
 
     IEnumerator TimeoutSequence()
     {
+        // Play timer buzzer sound
+        if (audioManager != null)
+        {
+            audioManager.PlayTimerBuzzer();
+        }
+        
         // Freeze all player movement for the delay period
         if (player1 != null)
         {
@@ -719,11 +781,6 @@ public class GameManager : MonoBehaviour
         // Stop the timer during picking mode
         isTimerRunning = false;
         
-        // Crossfade from platformer music
-        if (audioManager != null)
-        {
-            audioManager.CrossfadeFromPlatformer();
-        }
         
         // Show picking mode UI
         if (pickingModeUI != null)
@@ -899,6 +956,11 @@ public class GameManager : MonoBehaviour
                 player1BlockNameText.text = block.blockName;
             }
             
+            if (player1BlockDescriptionText != null)
+            {
+                player1BlockDescriptionText.text = block.blockDescription;
+            }
+            
             if (player1BlockImage != null && block.blockSprite != null)
             {
                 player1BlockImage.sprite = block.blockSprite;
@@ -911,6 +973,11 @@ public class GameManager : MonoBehaviour
             if (player2BlockNameText != null)
             {
                 player2BlockNameText.text = block.blockName;
+            }
+            
+            if (player2BlockDescriptionText != null)
+            {
+                player2BlockDescriptionText.text = block.blockDescription;
             }
             
             if (player2BlockImage != null && block.blockSprite != null)
@@ -931,6 +998,11 @@ public class GameManager : MonoBehaviour
                 player1BlockNameText.text = "";
             }
             
+            if (player1BlockDescriptionText != null)
+            {
+                player1BlockDescriptionText.text = "";
+            }
+            
             if (player1BlockImage != null)
             {
                 player1BlockImage.enabled = false;
@@ -945,6 +1017,11 @@ public class GameManager : MonoBehaviour
                 player2BlockNameText.text = "";
             }
             
+            if (player2BlockDescriptionText != null)
+            {
+                player2BlockDescriptionText.text = "";
+            }
+            
             if (player2BlockImage != null)
             {
                 player2BlockImage.enabled = false;
@@ -956,7 +1033,6 @@ public class GameManager : MonoBehaviour
     void SelectRandomObjects()
     {
         currentPickableObjects.Clear();
-        instanceToPrefabMap.Clear();
         
         // Destroy any previously spawned pickable objects
         foreach (GameObject obj in spawnedPickableObjects)
@@ -1001,8 +1077,6 @@ public class GameManager : MonoBehaviour
                 spawnedPickableObjects.Add(spawnedObj);
                 currentPickableObjects.Add(spawnedObj);
                 
-                // Map instance to original prefab
-                instanceToPrefabMap[spawnedObj] = prefab;
             }
             
             availableIndices.RemoveAt(randomIndex);
@@ -1012,16 +1086,13 @@ public class GameManager : MonoBehaviour
     void MakeSelection(Cursor cursor, ref bool hasPicked)
     {
         isMakingSelection = true;
-        Debug.Log($"MakeSelection called for {cursor.playerMode}");
         
         // Get the object the cursor is currently hovering over
         GameObject hoveredObject = cursor.GetCurrentPickableObject();
         
-        Debug.Log($"Hovered object: {hoveredObject}");
         
         if (hoveredObject == null)
         {
-            Debug.Log("Hovered object is null! Cannot make selection.");
             return; // Not hovering over a valid pickable object
         }
         
@@ -1031,45 +1102,41 @@ public class GameManager : MonoBehaviour
         
         if (block == null)
         {
-            Debug.LogError("No Block component found on hovered object!");
             return;
         }
         
         GameObject rootObject = block.gameObject;
         
-        Debug.Log($"Root object for lookup: {rootObject.name}");
         
         // Get the blockPrefab from the Block component
         GameObject blockPrefab = block.blockPrefab;
         
         if (blockPrefab == null)
         {
-            Debug.LogError($"Block component on {rootObject.name} has no blockPrefab assigned!");
             return;
         }
         
-        Debug.Log($"Block prefab to use: {blockPrefab.name}");
         
         // Store the blockPrefab for this player
         if (cursor.playerMode == Player.PlayerMode.Player1)
         {
             player1SelectedBlock = blockPrefab;
-            Debug.Log($"Player 1 selected block prefab: {blockPrefab.name}");
         }
         else if (cursor.playerMode == Player.PlayerMode.Player2)
         {
             player2SelectedBlock = blockPrefab;
-            Debug.Log($"Player 2 selected block prefab: {blockPrefab.name}");
         }
         
         // Destroy the selected object
         Destroy(rootObject);
         spawnedPickableObjects.Remove(rootObject);
         currentPickableObjects.Remove(rootObject);
-        instanceToPrefabMap.Remove(rootObject);
         
         // Mark as picked
         hasPicked = true;
+        
+        // Set BuildModule to Ready when player makes selection
+        SetBuildModuleReadyState(cursor.playerMode, true);
         
         // Don't clear the UI - keep it visible in build mode
         // ClearBlockInfo(cursor.playerMode);
@@ -1092,6 +1159,9 @@ public class GameManager : MonoBehaviour
         // Small delay
         yield return new WaitForSeconds(0.5f);
         
+        // Show StaticNoise during transition from picking to building mode
+        yield return StartCoroutine(ShowStaticNoiseTransition());
+        
         // Exit picking mode
         ExitPickingMode();
         
@@ -1100,6 +1170,10 @@ public class GameManager : MonoBehaviour
         {
             ToggleBuildingMode();
         }
+        
+        // Reset BuildModules to NotReady state for building mode
+        SetBuildModuleReadyState(Player.PlayerMode.Player1, false);
+        SetBuildModuleReadyState(Player.PlayerMode.Player2, false);
     }
 
     void PlaceBlock(Cursor cursor, ref bool hasPlacedBlock)
@@ -1160,6 +1234,9 @@ public class GameManager : MonoBehaviour
 
         // Mark that this player has placed a block
         hasPlacedBlock = true;
+
+        // Set BuildModule to Ready when player places block
+        SetBuildModuleReadyState(cursor.playerMode, true);
 
         // Disable the cursor
         cursor.DisableCursor();
@@ -1280,27 +1357,78 @@ public class GameManager : MonoBehaviour
         return deltaX <= 1.0f && deltaY <= 1.0f;
     }
 
-    IEnumerator ExitBuildingModeAndStartNewRound()
+    IEnumerator ShowStaticNoiseTransition()
     {
-        // Small delay to let the player see both blocks placed
-        yield return new WaitForSeconds(0.5f);
-
-        // Show StaticNoise during round transition
+        // Determine which mode we're transitioning to based on context
+        bool isPlatformerMode = DetermineTargetMode();
+        
+        // Determine if we're coming from chill mode (picking or building)
+        bool isFromChillMode = isPickingMode || isBuildingMode;
+        
+        // Start StaticNoise audio and begin crossfade (if needed)
+        if (audioManager != null)
+        {
+            audioManager.StartStaticNoiseTransition(isPlatformerMode, isFromChillMode);
+        }
+        
+        // Show StaticNoise during transition
         if (StaticNoise != null)
         {
             StaticNoise.SetActive(true);
         }
         
-        // Wait for StaticNoise duration
-        yield return new WaitForSeconds(staticNoiseDuration);
+        // Wait for StaticNoise duration (should match AudioManager crossfade duration)
+        float transitionDuration = audioManager != null ? audioManager.crossfadeDuration : staticNoiseDuration;
+        yield return new WaitForSeconds(transitionDuration);
         
         // Hide StaticNoise
         if (StaticNoise != null)
         {
             StaticNoise.SetActive(false);
         }
+        
+        // Stop StaticNoise audio (crossfade should be complete)
+        if (audioManager != null)
+        {
+            audioManager.EndStaticNoiseTransition();
+        }
+    }
+    
+    bool DetermineTargetMode()
+    {
+        // Determine if we're transitioning to platformer mode or chill mode
+        // This is called at the end of StaticNoise transitions
+        
+        // Check the context of where this transition is being called from
+        
+        // If we're in building mode, we're about to exit to platformer mode
+        if (isBuildingMode)
+        {
+            return true; // Going to platformer mode
+        }
+        
+        // If we're in picking mode, we're transitioning to building mode (chill music continues)
+        if (isPickingMode)
+        {
+            return false; // Going to chill mode (building mode)
+        }
+        
+        // If we're transitioning from platformer to picking mode
+        if (!isPickingMode && !isBuildingMode)
+        {
+            return false; // Going to chill mode (picking mode)
+        }
+        
+        // Default to platformer mode for safety
+        return true;
+    }
 
-        // Start a new round (spawning begins)
+    IEnumerator ExitBuildingModeAndStartNewRound()
+    {
+        // Small delay to let the player see both blocks placed
+        yield return new WaitForSeconds(0.5f);
+
+        // Start a new round (spawning begins) - ResetAndStartNewRound will handle the StaticNoise transition
         if (!isResetting)
         {
             StartCoroutine(ResetAndStartNewRound(true));
@@ -1319,11 +1447,6 @@ public class GameManager : MonoBehaviour
             player1HasPlacedBlock = false;
             player2HasPlacedBlock = false;
             
-            // Crossfade from platformer music (if not already done in picking mode)
-            if (audioManager != null)
-            {
-                audioManager.CrossfadeFromPlatformer();
-            }
             
             // Stop the timer during build mode
             isTimerRunning = false;
@@ -1547,6 +1670,121 @@ public class GameManager : MonoBehaviour
                 // Wait before looping again
                 yield return new WaitForSeconds(buildingModeLoopDelay);
             }
+        }
+    }
+    
+    void SetBuildModuleReadyState(Player.PlayerMode playerMode, bool isReady)
+    {
+        UnityEngine.UI.Image readyImage = null;
+        UnityEngine.UI.Image notReadyImage = null;
+        
+        if (playerMode == Player.PlayerMode.Player1)
+        {
+            readyImage = BuildModuleP1Ready;
+            notReadyImage = BuildModuleP1NotReady;
+        }
+        else if (playerMode == Player.PlayerMode.Player2)
+        {
+            readyImage = BuildModuleP2Ready;
+            notReadyImage = BuildModuleP2NotReady;
+        }
+        
+        if (readyImage != null && notReadyImage != null)
+        {
+            if (isReady)
+            {
+                // Ready: Ready=1.0 opacity, NotReady=0.16 opacity
+                Color readyColor = readyImage.color;
+                readyColor.a = 1.0f;
+                readyImage.color = readyColor;
+                
+                Color notReadyColor = notReadyImage.color;
+                notReadyColor.a = 0.16f;
+                notReadyImage.color = notReadyColor;
+            }
+            else
+            {
+                // Not Ready: Ready=0.16 opacity, NotReady=1.0 opacity
+                Color readyColor = readyImage.color;
+                readyColor.a = 0.16f;
+                readyImage.color = readyColor;
+                
+                Color notReadyColor = notReadyImage.color;
+                notReadyColor.a = 1.0f;
+                notReadyImage.color = notReadyColor;
+            }
+        }
+    }
+    
+    void SetScoreModuleAliveState(Player.PlayerMode playerMode, bool isAlive)
+    {
+        UnityEngine.UI.Image aliveImage = null;
+        UnityEngine.UI.Image notAliveImage = null;
+        
+        if (playerMode == Player.PlayerMode.Player1)
+        {
+            aliveImage = ScoreModuleP1Alive;
+            notAliveImage = ScoreModuleP1NotAlive;
+        }
+        else if (playerMode == Player.PlayerMode.Player2)
+        {
+            aliveImage = ScoreModuleP2Alive;
+            notAliveImage = ScoreModuleP2NotAlive;
+        }
+        
+        if (aliveImage != null && notAliveImage != null)
+        {
+            if (isAlive)
+            {
+                // Alive: Alive=1.0 opacity, NotAlive=0.16 opacity
+                Color aliveColor = aliveImage.color;
+                aliveColor.a = 1.0f;
+                aliveImage.color = aliveColor;
+                
+                Color notAliveColor = notAliveImage.color;
+                notAliveColor.a = 0.16f;
+                notAliveImage.color = notAliveColor;
+            }
+            else
+            {
+                // Not Alive: Alive=0.16 opacity, NotAlive=1.0 opacity
+                Color aliveColor = aliveImage.color;
+                aliveColor.a = 0.16f;
+                aliveImage.color = aliveColor;
+                
+                Color notAliveColor = notAliveImage.color;
+                notAliveColor.a = 1.0f;
+                notAliveImage.color = notAliveColor;
+            }
+        }
+    }
+    
+    void SpawnPlayerParticleEffect(Player.PlayerMode playerMode, Vector3 position)
+    {
+        GameObject particlePrefab = null;
+        
+        if (playerMode == Player.PlayerMode.Player1)
+        {
+            particlePrefab = player1SpawnParticlePrefab;
+        }
+        else if (playerMode == Player.PlayerMode.Player2)
+        {
+            particlePrefab = player2SpawnParticlePrefab;
+        }
+        
+        if (particlePrefab != null)
+        {
+            GameObject particleEffect = Instantiate(particlePrefab, position, Quaternion.identity);
+            
+            // Play the particle system if it has one
+            ParticleSystem ps = particleEffect.GetComponent<ParticleSystem>();
+            if (ps != null)
+            {
+                ps.Play();
+            }
+            
+            // Destroy the particle effect after 2 seconds
+            Destroy(particleEffect, 2f);
         }
     }
 }

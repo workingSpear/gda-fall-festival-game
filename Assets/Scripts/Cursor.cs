@@ -24,7 +24,6 @@ public class Cursor : MonoBehaviour
     public Sprite buildingCursorSprite;
     
     [Header("Block Settings")]
-    public float blockSize = 1f;
     public SpriteRenderer blockSprite;
     
     // Block hovering
@@ -60,13 +59,11 @@ public class Cursor : MonoBehaviour
         {
             if (col.CompareTag("object"))
             {
-                Debug.Log($"{playerMode} GetCurrentPickableObject found object via overlap: {col.gameObject.name}");
                 
                 // Return the root GameObject (the one with the Block component)
                 Block block = col.GetComponentInParent<Block>();
                 if (block != null)
                 {
-                    Debug.Log($"{playerMode} Returning root object: {block.gameObject.name}");
                     return block.gameObject;
                 }
                 
@@ -75,7 +72,6 @@ public class Cursor : MonoBehaviour
             }
         }
         
-        Debug.Log($"{playerMode} GetCurrentPickableObject returned null");
         return null;
     }
 
@@ -228,7 +224,6 @@ public class Cursor : MonoBehaviour
                 {
                     // Found a valid position!
                     transform.position = testPos;
-                    Debug.Log($"{playerMode} Cursor was stuck, snapped to valid position: {testPos}");
                     return;
                 }
             }
@@ -239,7 +234,6 @@ public class Cursor : MonoBehaviour
         safePos.x = Mathf.Round(safePos.x * 2f) / 2f;
         safePos.y = Mathf.Round(safePos.y * 2f) / 2f;
         transform.position = safePos;
-        Debug.LogWarning($"{playerMode} Cursor was stuck, snapped to center: {safePos}");
     }
 
     void HandleGridInput()
@@ -490,14 +484,12 @@ public class Cursor : MonoBehaviour
         // In picking mode, detect "object" tag and update UI
         if (other.CompareTag("object") && isCursorEnabled && isPickingMode)
         {
-            Debug.Log($"{playerMode} Cursor entered trigger with object: {other.gameObject.name}");
             
             Block block = other.GetComponentInParent<Block>();
             if (block != null)
             {
                 // Store the root GameObject (the one with the Block component) instead of the child
                 currentPickableObject = block.gameObject;
-                Debug.Log($"{playerMode} Stored currentPickableObject as: {currentPickableObject.name}");
                 
                 // Find GameManager and update block info
                 GameObject gameManagerObj = GameObject.FindGameObjectWithTag("gamemanager");
@@ -514,7 +506,6 @@ public class Cursor : MonoBehaviour
             {
                 // Fallback: store the child if no Block component found
                 currentPickableObject = other.gameObject;
-                Debug.Log($"{playerMode} No Block component found, stored child object: {currentPickableObject.name}");
             }
         }
         
@@ -527,7 +518,6 @@ public class Cursor : MonoBehaviour
         // In picking mode, clear pickable object reference when leaving "object"
         if (other.CompareTag("object") && isCursorEnabled && isPickingMode)
         {
-            Debug.Log($"{playerMode} Cursor exited trigger with object: {other.gameObject.name}");
             
             // Get the root GameObject to compare with currentPickableObject
             Block block = other.GetComponentInParent<Block>();
@@ -537,7 +527,6 @@ public class Cursor : MonoBehaviour
             if (currentPickableObject == rootObject)
             {
                 currentPickableObject = null;
-                Debug.Log($"{playerMode} Cursor cleared currentPickableObject");
                 
                 // Don't clear UI if we're exiting picking mode or making a selection (objects being destroyed)
                 GameObject gameManagerObj = GameObject.FindGameObjectWithTag("gamemanager");

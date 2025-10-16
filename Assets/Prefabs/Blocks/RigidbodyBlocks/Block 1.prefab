@@ -154,6 +154,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Block
   size: 1
   blockName: BLOCK
+  blockDescription: Made of ?. Used for platforming.
   blockSprite: {fileID: 3641931977962690872, guid: 42596ab4a39f8b44ba67e0bacd02a658, type: 3}
   blockPrefab: {fileID: 1086913697617101674, guid: 8fcef7d15f95c674887e8c3e23145593, type: 3}
   tint: {fileID: 0}

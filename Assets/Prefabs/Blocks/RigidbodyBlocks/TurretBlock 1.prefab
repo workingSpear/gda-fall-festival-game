@@ -317,6 +317,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Block
   size: 1
   blockName: GLOCK
+  blockDescription: Has a range of 7 tiles. Fires every few seconds to eliminate
+    targets.
   blockSprite: {fileID: -5123327587837605992, guid: ba8bd1a69d8589a4bb05733df555427f, type: 3}
   blockPrefab: {fileID: 2953617085689788972, guid: 50162a4aebe06e14bb2c037056889c8d, type: 3}
   tint: {fileID: 0}

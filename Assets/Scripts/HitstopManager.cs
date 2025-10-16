@@ -21,6 +21,16 @@ public class HitstopManager : MonoBehaviour
     public float deathShakeIntensity = 0.3f;
     [Tooltip("Time before death object is destroyed")]
     public float deathObjectLifetime = 5f;
+    
+    [Header("Player Death Shake Settings")]
+    [Tooltip("Separate ScreenShake component for player death effects")]
+    public ScreenShake playerDeathScreenShake;
+    [Tooltip("Multiplier for player death shake intensity (applied to base deathShakeIntensity)")]
+    [SerializeField] private float playerDeathShakeMultiplier = 2f;
+    [Tooltip("Duration of each individual shake burst during continuous player death shake")]
+    [SerializeField] private float playerDeathShakeBurstDuration = 0.1f;
+    [Tooltip("Interval between shake bursts during continuous player death shake")]
+    [SerializeField] private float playerDeathShakeBurstInterval = 0.05f;
 
     [Header("End Settings")]
     [Tooltip("Particle system prefab to spawn when reaching the end")]
@@ -33,6 +43,8 @@ public class HitstopManager : MonoBehaviour
     private float sharedBufferEndTime = 0f; // Shared buffer end time for all objects
     private float lastHitstopStartTime = 0f; // Track when last hitstop started
     private bool isInBuffer = false; // Track if we're in buffer period
+    private bool hasPlayerDied = false; // Track if a player (not clone) has died
+    private Coroutine continuousShakeCoroutine; // Track continuous shake coroutine
 
     private class EffectInfo
     {
@@ -114,8 +126,15 @@ public class HitstopManager : MonoBehaviour
                 hitStopColor = player.playerMode == Player.PlayerMode.Player1 ? Color.red : Color.blue;
             }
             
-            hitStopColor.a = 33f / 255f; // Set opacity to 33/255
+            // Make player death more obvious with higher opacity and pulsing effect
+            hitStopColor.a = 200f / 255f; // Much higher opacity for player deaths (200/255 instead of 33/255)
             hitStop.color = hitStopColor;
+            
+            // Start pulsing effect for player deaths
+            if (!isEnd)
+            {
+                StartCoroutine(PulseHitStopForPlayer());
+            }
         }
         
         // Disable gravity and stop movement
@@ -161,6 +180,16 @@ public class HitstopManager : MonoBehaviour
         
         // Extend the shared buffer (if this is first object, starts buffer; otherwise extends it)
         ExtendSharedBuffer();
+        
+        // Mark that a player has died and start continuous shake during buffer (after buffer is set)
+        hasPlayerDied = true;
+        if (playerDeathScreenShake != null && continuousShakeCoroutine == null && sharedBufferEndTime > Time.realtimeSinceStartup)
+        {
+            continuousShakeCoroutine = StartCoroutine(ContinuousShakeDuringBuffer());
+        }
+        else if (sharedBufferEndTime <= Time.realtimeSinceStartup)
+        {
+        }
         
         // Wait for the SHARED buffer to end (not a local buffer)
         while (Time.realtimeSinceStartup < sharedBufferEndTime)
@@ -429,13 +458,69 @@ public class HitstopManager : MonoBehaviour
             screenShake.Shake(scaledDuration, scaledIntensity);
         }
         
+        // Stop continuous shake if it was running
+        if (continuousShakeCoroutine != null)
+        {
+            StopCoroutine(continuousShakeCoroutine);
+            continuousShakeCoroutine = null;
+        }
+        
         // Clear pending effects and reset flags
         pendingEffects.Clear();
         isCoordinatingDeaths = false;
         sharedBufferEndTime = 0f;
         lastHitstopStartTime = 0f;
         isInBuffer = false;
+        hasPlayerDied = false;
         deathSequenceCoroutine = null;
+    }
+    
+    IEnumerator ContinuousShakeDuringBuffer()
+    {
+        // Continuous shake during the buffer period when a player dies
+        while (hasPlayerDied && Time.realtimeSinceStartup < sharedBufferEndTime)
+        {
+            if (playerDeathScreenShake != null)
+            {
+                // Use configurable intense shake for player deaths
+                float shakeIntensity = deathShakeIntensity * playerDeathShakeMultiplier;
+                playerDeathScreenShake.Shake(playerDeathShakeBurstDuration, shakeIntensity);
+            }
+            else
+            {
+            }
+            
+            // Wait for configurable interval before next shake (use realtime since time might be frozen)
+            yield return new WaitForSecondsRealtime(playerDeathShakeBurstInterval);
+        }
+        
+        continuousShakeCoroutine = null;
+    }
+    
+    IEnumerator PulseHitStopForPlayer()
+    {
+        // Pulsing effect for player deaths to make them more obvious
+        if (hitStop == null) yield break;
+        
+        Color baseColor = hitStop.color;
+        float baseAlpha = baseColor.a;
+        
+        while (hasPlayerDied && hitStop.enabled)
+        {
+            // Pulse between base alpha and full opacity
+            float pulseAlpha = baseAlpha + (1f - baseAlpha) * Mathf.Sin(Time.realtimeSinceStartup * 10f);
+            Color pulseColor = baseColor;
+            pulseColor.a = pulseAlpha;
+            hitStop.color = pulseColor;
+            
+            yield return null;
+        }
+        
+        // Reset to base color when done
+        if (hitStop != null)
+        {
+            hitStop.color = baseColor;
+        }
     }
 }
 
