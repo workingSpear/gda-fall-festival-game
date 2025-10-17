@@ -33,6 +33,9 @@ public class Clone : MonoBehaviour
     
     // Portal teleportation cooldown
     private bool canTeleport = true;
+    
+    // Fan force tracking
+    private Vector2 fanForce = Vector2.zero;
     [SerializeField] HitstopManager hitstopManager;
 
     void Awake()
@@ -96,7 +99,9 @@ public class Clone : MonoBehaviour
                     velocity.x = -velocity.x;
                 }
                 
-                rb.linearVelocity = velocity;
+                // Apply fan force to the recorded velocity
+                Vector2 finalVelocity = velocity + fanForce;
+                rb.linearVelocity = finalVelocity;
                 currentVelocityIndex++;
             }
             else
@@ -313,6 +318,29 @@ public class Clone : MonoBehaviour
                 }
             }
         }
+        else if (other.CompareTag("fan"))
+        {
+            // Handle fan blowing effect
+            Fan fan = other.GetComponentInParent<Fan>();
+            if (fan != null)
+            {
+                // Get the fan's blow direction and force
+                Vector2 blowDirection = fan.blowDirection;
+                float fanForceValue = fan.fanForce;
+                
+                // Calculate the force vector and store it
+                fanForce = blowDirection * fanForceValue;
+            }
+        }
+        else if (other.CompareTag("fanBackButton"))
+        {
+            // Handle fan rotation
+            Fan fan = other.GetComponentInParent<Fan>();
+            if (fan != null)
+            {
+                fan.RotateFan();
+            }
+        }
         else if (other.CompareTag("endClone"))
         {
             // Don't trigger end collision in building mode
@@ -354,6 +382,11 @@ public class Clone : MonoBehaviour
         {
             // Re-enable teleportation when clone exits the portal
             canTeleport = true;
+        }
+        else if (other.CompareTag("fan"))
+        {
+            // Clear fan force when clone exits the fan
+            fanForce = Vector2.zero;
         }
     }
 }

@@ -64,6 +64,9 @@ public class Player : MonoBehaviour
     
     // Portal teleportation cooldown
     private bool canTeleport = true;
+    
+    // Fan force tracking
+    private Vector2 fanForce = Vector2.zero;
 
     void Start()
     {
@@ -126,15 +129,18 @@ public class Player : MonoBehaviour
             return;
         }
         
-        // Apply horizontal movement
-        rb.linearVelocity = new Vector2(moveInput * moveSpeed, rb.linearVelocity.y);
+        // Apply horizontal movement with fan force
+        float horizontalVelocity = moveInput * moveSpeed + fanForce.x;
+        float currentVerticalVelocity = rb.linearVelocity.y + fanForce.y;
+        rb.linearVelocity = new Vector2(horizontalVelocity, currentVerticalVelocity);
 
         // Apply jump with buffering, coyote time, and cooldown
         // Can jump if: (grounded OR coyote time active) AND jump buffer active AND cooldown elapsed
         bool cooldownComplete = Time.time >= lastJumpTime + jumpCooldown;
         if (jumpBufferCounter > 0 && coyoteTimeCounter > 0 && cooldownComplete)
         {
-            rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
+            float jumpVerticalVelocity = jumpForce + fanForce.y;
+            rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpVerticalVelocity);
             jumpBufferCounter = 0; // Consume the jump buffer
             lastJumpTime = Time.time; // Record jump time
             isHoldingJump = true; // Start tracking jump hold
@@ -314,6 +320,29 @@ public class Player : MonoBehaviour
                 }
             }
         }
+        else if (other.CompareTag("fan"))
+        {
+            // Handle fan blowing effect
+            Fan fan = other.GetComponentInParent<Fan>();
+            if (fan != null)
+            {
+                // Get the fan's blow direction and force
+                Vector2 blowDirection = fan.blowDirection;
+                float fanForceValue = fan.fanForce;
+                
+                // Calculate the force vector and store it
+                fanForce = blowDirection * fanForceValue;
+            }
+        }
+        else if (other.CompareTag("fanBackButton"))
+        {
+            // Handle fan rotation
+            Fan fan = other.GetComponentInParent<Fan>();
+            if (fan != null)
+            {
+                fan.RotateFan();
+            }
+        }
         else if (other.CompareTag("drinkable"))
         {
             // Handle drinkable object interaction
@@ -368,6 +397,11 @@ public class Player : MonoBehaviour
         {
             // Re-enable teleportation when player exits the portal
             canTeleport = true;
+        }
+        else if (other.CompareTag("fan"))
+        {
+            // Clear fan force when player exits the fan
+            fanForce = Vector2.zero;
         }
     }
 

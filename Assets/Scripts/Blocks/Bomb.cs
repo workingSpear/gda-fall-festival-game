@@ -176,6 +176,31 @@ public class Bomb : Block
         
         // Ensure isDisabled is false
         isDisabled = false;
+        
+        // Force re-enable all fan children that were disabled by this bomb
+        ForceReEnableFanChildren();
+    }
+    
+    void ForceReEnableFanChildren()
+    {
+        // Find Object Transform Mommy
+        Transform objectTransformMommy = GameObject.FindGameObjectWithTag("mommy")?.transform;
+        if (objectTransformMommy == null) return;
+        
+        // Find all Fan objects under Object Transform Mommy
+        Fan[] allFans = objectTransformMommy.GetComponentsInChildren<Fan>();
+        foreach (Fan fan in allFans)
+        {
+            if (fan != null && fan.isDisabled)
+            {
+                // Force enable all children of this fan
+                for (int i = 0; i < fan.transform.childCount; i++)
+                {
+                    Transform child = fan.transform.GetChild(i);
+                    child.gameObject.SetActive(true);
+                }
+            }
+        }
     }
     
     public void ForceEnableBomb()
@@ -217,6 +242,9 @@ public class Bomb : Block
         
         // Also get all objects with "turret" tag specifically
         GameObject[] turretObjects = GameObject.FindGameObjectsWithTag("turret");
+        
+        // Get all objects with "fanMod" tag specifically
+        GameObject[] fanObjects = GameObject.FindGameObjectsWithTag("fanMod");
         
         // Check all tiles within the explosion radius in a square grid pattern
         int radius = Mathf.RoundToInt(explosionRadius);
@@ -275,6 +303,37 @@ public class Bomb : Block
                         break; // Found a turret at this position, move to next position
                     }
                 }
+                
+                // Also check fans specifically by tag
+                foreach (GameObject fanObject in fanObjects)
+                {
+                    if (fanObject == null || fanObject == this.gameObject) continue; // Skip destroyed fans and bomb itself
+                    
+                    // Make sure this fan is under Object Transform Mommy
+                    if (!fanObject.transform.IsChildOf(objectTransformMommy)) continue;
+                    
+                    // Check if this fan is close enough to the check position
+                    Vector2 fanPos = fanObject.transform.position;
+                    float distance = Vector2.Distance(fanPos, checkPos);
+                    
+                    if (distance < tileSize * 0.25f) // Small tolerance for position matching
+                    {
+                        // Get the Fan component and add it to blocks to disable
+                        Fan fan = fanObject.GetComponent<Fan>();
+                        if (fan == null)
+                        {
+                            // Try GetComponentInChildren as fallback
+                            fan = fanObject.GetComponentInChildren<Fan>();
+                        }
+                        
+                        if (fan != null)
+                        {
+                            blocksToDisable.Add(fan);
+                        }
+                        
+                        break; // Found a fan at this position, move to next position
+                    }
+                }
             }
         }
         
@@ -284,6 +343,18 @@ public class Bomb : Block
             if (block != null)
             {
                 block.DisableBlock();
+                
+                // Special logic for Fan objects - also disable their children
+                if (block is Fan)
+                {
+                    Fan fan = block as Fan;
+                    for (int i = 0; i < fan.transform.childCount; i++)
+                    {
+                        Transform child = fan.transform.GetChild(i);
+                        child.gameObject.SetActive(false);
+                    }
+                }
+                
                 Collider2D col = block.GetComponent<Collider2D>();
                 if (col != null)
                 {
@@ -333,4 +404,5 @@ public class Bomb : Block
         
         return positions;
     }
+    
 }

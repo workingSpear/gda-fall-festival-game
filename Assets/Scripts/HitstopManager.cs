@@ -595,7 +595,6 @@ public class HitstopManager : MonoBehaviour
     
     IEnumerator DisableSpritesAfterBuffer()
     {
-        Debug.Log($"DisableSpritesAfterBuffer started, waiting for buffer to end at {sharedBufferEndTime}");
         
         // Wait for the buffer period to end
         while (Time.realtimeSinceStartup < sharedBufferEndTime)
@@ -603,7 +602,6 @@ public class HitstopManager : MonoBehaviour
             yield return null;
         }
         
-        Debug.Log("Buffer ended, disabling all cycling sprites and resetting cycle");
         
         // Disable all cycling sprites after buffer ends
         if (cyclingSprites != null)
@@ -613,7 +611,6 @@ public class HitstopManager : MonoBehaviour
                 if (sprite != null)
                 {
                     sprite.enabled = false;
-                    Debug.Log($"Disabled sprite: {sprite.name}");
                 }
             }
         }
@@ -623,7 +620,6 @@ public class HitstopManager : MonoBehaviour
         
         // Reset the cycle to the first sprite
         currentSpriteIndex = 0;
-        Debug.Log("Reset sprite cycle to index 0");
         
         // Clear the coroutine reference
         disableSpritesCoroutine = null;

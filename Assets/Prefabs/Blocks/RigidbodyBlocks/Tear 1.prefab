@@ -98,7 +98,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: -2, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.5, y: 0.5, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 6993845616716681094}
@@ -174,7 +174,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b3811067806a67c43832db0095ce53c2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Block
-  size: 4
+  size: 1
   blockName: TEAR
   blockDescription: Link 2 together to get a pathway.
   blockSprite: {fileID: 8409234884740282508, guid: bf6feb9d9db1eae45af3e298d5c728c5, type: 3}

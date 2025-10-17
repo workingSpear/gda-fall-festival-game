@@ -7087,13 +7087,12 @@ MonoBehaviour:
   - {fileID: 2953617085689788972, guid: 7f178fb139b154945b1c3a4f2bce35f8, type: 3}
   - {fileID: 6389625592315625205, guid: d9aec536d6385264dad1e705dfad416f, type: 3}
   - {fileID: 6713886750282550536, guid: 978b261e437a9534680bbb076a1b7e95, type: 3}
-  - {fileID: 6713886750282550536, guid: 978b261e437a9534680bbb076a1b7e95, type: 3}
-  - {fileID: 6713886750282550536, guid: 978b261e437a9534680bbb076a1b7e95, type: 3}
-  - {fileID: 6713886750282550536, guid: 978b261e437a9534680bbb076a1b7e95, type: 3}
+  - {fileID: 3407711413252222566, guid: 475b41651500455439f899178e6e9f87, type: 3}
   pickableDrinks:
   - {fileID: 907202582347058908, guid: 5ae72d04ad439954ea72e92063925cab, type: 3}
   - {fileID: 2792140714948998591, guid: be3a85200a72b924682ef58a0a02da73, type: 3}
-  drinkSpawnProbability: 0.3
+  - {fileID: 519389248785222886, guid: 9c589e5e8d47eb0469f99d17d0b1e260, type: 3}
+  drinkSpawnProbability: 1
   buildingModeUI: {fileID: 344789702}
   objectTransformMommy: {fileID: 1831120493}
   GENESIS: {fileID: 4577215037538660453}
@@ -7111,8 +7110,8 @@ MonoBehaviour:
   isMakingSelection: 0
   player1SelectedBlock: {fileID: 0}
   player2SelectedBlock: {fileID: 0}
-  player1Points: 12
-  player2Points: 12
+  player1Points: 0
+  player2Points: 0
 --- !u!114 &486515032
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -19670,68 +19669,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1459154830}
   m_CullTransparentMesh: 1
---- !u!1001 &1460683211
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 1831120493}
-    m_Modifications:
-    - target: {fileID: 907202582347058908, guid: 0693afa11cb70504f88bc3dcb66109e2, type: 3}
-      propertyPath: m_Name
-      value: Juice
-      objectReference: {fileID: 0}
-    - target: {fileID: 6628094882745179599, guid: 0693afa11cb70504f88bc3dcb66109e2, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: -0.48224127
-      objectReference: {fileID: 0}
-    - target: {fileID: 6628094882745179599, guid: 0693afa11cb70504f88bc3dcb66109e2, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: -2
-      objectReference: {fileID: 0}
-    - target: {fileID: 6628094882745179599, guid: 0693afa11cb70504f88bc3dcb66109e2, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6628094882745179599, guid: 0693afa11cb70504f88bc3dcb66109e2, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6628094882745179599, guid: 0693afa11cb70504f88bc3dcb66109e2, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6628094882745179599, guid: 0693afa11cb70504f88bc3dcb66109e2, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6628094882745179599, guid: 0693afa11cb70504f88bc3dcb66109e2, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6628094882745179599, guid: 0693afa11cb70504f88bc3dcb66109e2, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6628094882745179599, guid: 0693afa11cb70504f88bc3dcb66109e2, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6628094882745179599, guid: 0693afa11cb70504f88bc3dcb66109e2, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 0693afa11cb70504f88bc3dcb66109e2, type: 3}
---- !u!4 &1460683212 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 6628094882745179599, guid: 0693afa11cb70504f88bc3dcb66109e2, type: 3}
-  m_PrefabInstance: {fileID: 1460683211}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1463529472
 GameObject:
   m_ObjectHideFlags: 0
@@ -25176,7 +25113,6 @@ Transform:
   - {fileID: 2086689127}
   - {fileID: 1062053169}
   - {fileID: 1190496489}
-  - {fileID: 1460683212}
   m_Father: {fileID: 1675409277}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1831519414

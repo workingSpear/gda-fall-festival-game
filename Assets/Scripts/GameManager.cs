@@ -853,12 +853,24 @@ public class GameManager : MonoBehaviour
             if (block != null) // Check if block still exists (not destroyed)
             {
                 block.EnableBlock();
+                
+                // Special logic for Fan objects - also enable their children
+                if (block is Fan)
+                {
+                    Fan fan = block as Fan;
+                    for (int i = 0; i < fan.transform.childCount; i++)
+                    {
+                        Transform child = fan.transform.GetChild(i);
+                        child.gameObject.SetActive(true);
+                    }
+                }
             }
         }
         
         // Clear the list of disabled blocks
         disabledBlocks.Clear();
     }
+    
     
     void ReEnableBombs()
     {

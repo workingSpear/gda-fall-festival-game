@@ -16,6 +16,9 @@ TagManager:
   - turret
   - endClone
   - portal
+  - fan
+  - fanMod
+  - fanBackButton
   layers:
   - Default
   - TransparentFX

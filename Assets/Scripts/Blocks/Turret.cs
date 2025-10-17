@@ -89,6 +89,13 @@ public class Turret : Block
             return;
         }
         
+        // Don't target during building mode
+        GameManager gameManager = FindFirstObjectByType<GameManager>();
+        if (gameManager != null && gameManager.IsInBuildingMode())
+        {
+            return; // Cannot target during building mode
+        }
+        
         // Find the closest player
         FindClosestPlayer();
         
