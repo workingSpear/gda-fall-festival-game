@@ -489,11 +489,8 @@ public class GameManager : MonoBehaviour
             SpawnPlayerParticleEffect(Player.PlayerMode.Player2, player2.transform.position);
         }
 
-        // Start countdown timer when all players have spawned
-        timeRemaining = timerDuration + (roundCounter * 0.75f);
-        isTimerRunning = true;
-        hasTimedOut = false;
-        UpdateTimerDisplay();
+        // Show "GO!" sequence and start timer after players spawn
+        StartCoroutine(ShowGoSequence());
 
         // Start recording for the next round
         if (cloneRecorder != null)
@@ -517,9 +514,42 @@ public class GameManager : MonoBehaviour
     {
         if (timerText != null)
         {
-            // Format: 10.32 (shows seconds with 2 decimal places for 100ths of a second)
-            timerText.text = timeRemaining.ToString("F2");
+            if (isPickingMode)
+            {
+                timerText.text = "PICK";
+            }
+            else if (isBuildingMode)
+            {
+                timerText.text = "BUILD";
+            }
+            else if (!isTimerRunning)
+            {
+                // Platforming mode but timer not running (before players spawn)
+                timerText.text = "...";
+            }
+            else
+            {
+                // Platforming mode with timer running (after players spawn)
+                timerText.text = timeRemaining.ToString("F2");
+            }
         }
+    }
+    
+    // Coroutine for "GO!" sequence when players spawn
+    IEnumerator ShowGoSequence()
+    {
+        if (timerText != null)
+        {
+            timerText.text = "GO!";
+        }
+        
+        yield return new WaitForSeconds(0.5f);
+        
+        // Start the timer after the "GO!" display
+        timeRemaining = timerDuration + (roundCounter * 0.25f);
+        isTimerRunning = true;
+        hasTimedOut = false;
+        UpdateTimerDisplay();
     }
 
     public void AwardPoint(Player.PlayerMode playerMode)
@@ -542,7 +572,7 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    public void OnPlayerDeath(Player.PlayerMode playerMode, bool isRealDeath = true)
+    public void OnPlayerDeath(Player.PlayerMode playerMode, bool isRealDeath = true, bool isFromClone = false)
     {
         // Track death for game ending (only real deaths, not reaching end)
         if (isRealDeath)
@@ -557,8 +587,11 @@ public class GameManager : MonoBehaviour
             }
         }
         
-        // Set ScoreModule to NotAlive when player dies
-        SetScoreModuleAliveState(playerMode, false);
+        // Only set ScoreModule to NotAlive when the actual player dies, not when clones die
+        if (!isFromClone)
+        {
+            SetScoreModuleAliveState(playerMode, false);
+        }
         
         // Check if both players are now dead
         bool bothPlayersDead = false;
@@ -1125,6 +1158,7 @@ public class GameManager : MonoBehaviour
         
         // Stop the timer during picking mode
         isTimerRunning = false;
+        UpdateTimerDisplay();
         
         
         // Show picking mode UI
@@ -1894,6 +1928,7 @@ public class GameManager : MonoBehaviour
             
             // Stop the timer during build mode
             isTimerRunning = false;
+            UpdateTimerDisplay();
             
             // Disable players
             if (player1 != null)
@@ -1975,10 +2010,14 @@ public class GameManager : MonoBehaviour
         else
         {
             buildingModeUI.SetActive(false);
-            // Exiting building mode
+            // Exiting building mode (entering platforming mode)
             // Reset placement flags
             player1HasPlacedBlock = false;
             player2HasPlacedBlock = false;
+            
+            // Show "..." immediately when switching to platforming mode
+            isTimerRunning = false;
+            UpdateTimerDisplay();
             
             // Stop the looping coroutine
             if (buildingModeCoroutine != null)

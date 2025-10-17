@@ -292,7 +292,7 @@ public class Clone : MonoBehaviour
             GameManager gameManager = GameObject.FindGameObjectWithTag("gamemanager")?.GetComponent<GameManager>();
             if (gameManager != null)
             {
-                gameManager.OnPlayerDeath(playerMode, true); // true = real death from hazard
+                gameManager.OnPlayerDeath(playerMode, true, true); // true = real death from hazard, true = from clone
             }
         }
         else if (other.CompareTag("portal"))

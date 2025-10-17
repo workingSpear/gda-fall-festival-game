@@ -288,7 +288,7 @@ public class Player : MonoBehaviour
             GameManager gameManager = GameObject.FindGameObjectWithTag("gamemanager")?.GetComponent<GameManager>();
             if (gameManager != null)
             {
-                gameManager.OnPlayerDeath(playerMode);
+                gameManager.OnPlayerDeath(playerMode, true, false); // true = real death, false = not from clone
             }
         }
         else if (other.CompareTag("portal"))
@@ -391,7 +391,7 @@ public class Player : MonoBehaviour
             // Notify GameManager of player death (reaching end also counts as "death" for round-end logic)
             if (gameManager != null)
             {
-                gameManager.OnPlayerDeath(playerMode, false); // false = not a real death, just reaching end
+                gameManager.OnPlayerDeath(playerMode, false, false); // false = not a real death, just reaching end, false = not from clone
             }
         }
     }
