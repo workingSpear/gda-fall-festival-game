@@ -7092,7 +7092,7 @@ MonoBehaviour:
   - {fileID: 907202582347058908, guid: 5ae72d04ad439954ea72e92063925cab, type: 3}
   - {fileID: 2792140714948998591, guid: be3a85200a72b924682ef58a0a02da73, type: 3}
   - {fileID: 519389248785222886, guid: 9c589e5e8d47eb0469f99d17d0b1e260, type: 3}
-  drinkSpawnProbability: 1
+  drinkSpawnProbability: 0.3
   buildingModeUI: {fileID: 344789702}
   objectTransformMommy: {fileID: 1831120493}
   GENESIS: {fileID: 4577215037538660453}
@@ -7106,6 +7106,9 @@ MonoBehaviour:
   winnerText: {fileID: 528888032}
   player1RigidbodyClone: {fileID: 8626658154350870718, guid: 14b137b5cbcaa4f4f95479c32ffc56a6, type: 3}
   player2RigidbodyClone: {fileID: 8626658154350870718, guid: 752afca2428e4084dbe3a00366957338, type: 3}
+  showOccupiedPositions: 1
+  allOccupiedPositions: []
+  occupiedPositionsString: 
   isExitingPickingMode: 0
   isMakingSelection: 0
   player1SelectedBlock: {fileID: 0}
@@ -8365,7 +8368,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: -2.02}
+  m_AnchoredPosition: {x: 0, y: 0.34}
   m_SizeDelta: {x: 20, y: 5}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!4 &533026274 stripped
@@ -10329,6 +10332,63 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: d4336dc23cc85a04dbc9616aeabba3cb, type: 3}
+--- !u!1001 &647289764
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1831120493}
+    m_Modifications:
+    - target: {fileID: 2268168810339546747, guid: fc9e3693b12c7994c852e9db778a7aad, type: 3}
+      propertyPath: m_Name
+      value: Saw
+      objectReference: {fileID: 0}
+    - target: {fileID: 3117514346431869862, guid: fc9e3693b12c7994c852e9db778a7aad, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -0.59014
+      objectReference: {fileID: 0}
+    - target: {fileID: 3117514346431869862, guid: fc9e3693b12c7994c852e9db778a7aad, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -1.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 3117514346431869862, guid: fc9e3693b12c7994c852e9db778a7aad, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3117514346431869862, guid: fc9e3693b12c7994c852e9db778a7aad, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3117514346431869862, guid: fc9e3693b12c7994c852e9db778a7aad, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3117514346431869862, guid: fc9e3693b12c7994c852e9db778a7aad, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3117514346431869862, guid: fc9e3693b12c7994c852e9db778a7aad, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3117514346431869862, guid: fc9e3693b12c7994c852e9db778a7aad, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3117514346431869862, guid: fc9e3693b12c7994c852e9db778a7aad, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3117514346431869862, guid: fc9e3693b12c7994c852e9db778a7aad, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: fc9e3693b12c7994c852e9db778a7aad, type: 3}
 --- !u!1001 &648020800
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -12859,7 +12919,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 2000 BLOCKS USED.
+  m_text: <color=#B05454>2000 <color=#cc8781>BLOCKS <color=#d9b472>USED.
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 99abd0db28ad6eb4d9c831a1f03116ab, type: 2}
   m_sharedMaterial: {fileID: 5452190310903107242, guid: 99abd0db28ad6eb4d9c831a1f03116ab, type: 2}
@@ -12868,8 +12928,8 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
-  m_fontColor: {r: 1, g: 1, b: 1, a: 1}
+    rgba: 4283716784
+  m_fontColor: {r: 0.6901961, g: 0.32941177, b: 0.32941177, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -13229,7 +13289,8 @@ GameObject:
   m_Component:
   - component: {fileID: 898363402}
   - component: {fileID: 898363403}
-  m_Layer: 0
+  - component: {fileID: 898363404}
+  m_Layer: 10
   m_Name: Ceiling
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -13309,6 +13370,52 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!61 &898363404
+BoxCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 898363401}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 0
+  m_UsedByEffector: 0
+  m_CompositeOperation: 0
+  m_CompositeOrder: 0
+  m_Offset: {x: 0.5, y: 0.5}
+  m_SpriteTilingProperty:
+    border: {x: 0, y: 0, z: 0, w: 0}
+    pivot: {x: 0, y: 0}
+    oldSize: {x: 1, y: 1}
+    newSize: {x: 1, y: 1}
+    adaptiveTilingThreshold: 0.5
+    drawMode: 0
+    adaptiveTiling: 0
+  m_AutoTiling: 0
+  m_Size: {x: 1, y: 1}
+  m_EdgeRadius: 0
 --- !u!1001 &901607674
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -23316,6 +23423,11 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 1595969569331841271, guid: d4336dc23cc85a04dbc9616aeabba3cb, type: 3}
   m_PrefabInstance: {fileID: 1884089250}
   m_PrefabAsset: {fileID: 0}
+--- !u!4 &1727887462 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 3117514346431869862, guid: fc9e3693b12c7994c852e9db778a7aad, type: 3}
+  m_PrefabInstance: {fileID: 647289764}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1733730499
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -25113,6 +25225,7 @@ Transform:
   - {fileID: 2086689127}
   - {fileID: 1062053169}
   - {fileID: 1190496489}
+  - {fileID: 1727887462}
   m_Father: {fileID: 1675409277}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1831519414
@@ -25153,7 +25266,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 200 RECORDED DEATHS.
+  m_text: <color=#e0dbcd>200 <color=#3da788>RECORDED <color=#1b807b>DEATHS.
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 99abd0db28ad6eb4d9c831a1f03116ab, type: 2}
   m_sharedMaterial: {fileID: 5452190310903107242, guid: 99abd0db28ad6eb4d9c831a1f03116ab, type: 2}
@@ -25162,8 +25275,8 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
-  m_fontColor: {r: 1, g: 1, b: 1, a: 1}
+    rgba: 4281078293
+  m_fontColor: {r: 0.08235294, g: 0.07058824, b: 0.17254902, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -25291,7 +25404,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: -0.05}
+  m_AnchoredPosition: {x: 0, y: 1.24}
   m_SizeDelta: {x: 20, y: 5}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &1841361363
@@ -29497,6 +29610,10 @@ PrefabInstance:
       propertyPath: hitstopManager
       value: 
       objectReference: {fileID: 486515032}
+    - target: {fileID: 8934397096773249657, guid: b4fc3c5d23d76f54e86b180bf267490c, type: 3}
+      propertyPath: groundCheckRadius
+      value: 0.2
+      objectReference: {fileID: 0}
     - target: {fileID: 8934397096773249657, guid: b4fc3c5d23d76f54e86b180bf267490c, type: 3}
       propertyPath: deathShakeDuration
       value: 0.25

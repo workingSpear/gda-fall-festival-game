@@ -238,7 +238,7 @@ public class DrinkManager : MonoBehaviour
         }
         else
         {
-            player.transform.localScale = new Vector3(0.5f, 0.5f, 1f);
+            player.transform.localScale = new Vector3(0.4f, 0.4f, 1f);
         }
         
         if (originalMoveSpeeds.ContainsKey(player))
@@ -290,7 +290,7 @@ public class DrinkManager : MonoBehaviour
         if (clone == null) return;
         
         // Reset clone scale to original size
-        clone.transform.localScale = new Vector3(0.5f, 0.5f, 1f);
+        clone.transform.localScale = new Vector3(0.4f, 0.4f, 1f);
     }
     
     void ResetInvertedControlsForClones(Player.PlayerMode playerMode)

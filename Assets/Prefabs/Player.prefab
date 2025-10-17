@@ -58,7 +58,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0.504, z: 0}
-  m_LocalScale: {x: 0.98425, y: 0.01, z: 1}
+  m_LocalScale: {x: 0.8, y: 0.01, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 734772000198578294}
@@ -73,7 +73,7 @@ BoxCollider2D:
   m_Enabled: 1
   serializedVersion: 3
   m_Density: 1
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 6200000, guid: 6fe33868c3ec38d41a709691eb0d5f48, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -297,7 +297,7 @@ MonoBehaviour:
   hangtimeGravityScale: 2.5
   hangtimeThreshold: 2
   groundCheck: {fileID: 8800315253463817607}
-  groundCheckRadius: 0.2
+  groundCheckRadius: 0.25
   groundLayer:
     serializedVersion: 2
     m_Bits: 8
@@ -310,3 +310,4 @@ MonoBehaviour:
   player2DeathPrefab: {fileID: 0}
   jumpableHead: {fileID: 3758031948016595734}
   hasBeenHitStopped: 0
+  hasInvertedControls: 0

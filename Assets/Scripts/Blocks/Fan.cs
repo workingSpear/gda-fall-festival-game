@@ -8,6 +8,8 @@ public class Fan : Block
     
     [Tooltip("Force of the fan push")]
     public float fanForce = 10f;
+    [Tooltip("Maximum force that can be applied to players (prevents excessive velocity)")]
+    public float maxPlayerForce = 15f;
     
     [Tooltip("Tag for objects that can be blown by the fan")]
     public string fanTag = "fan";
@@ -20,10 +22,34 @@ public class Fan : Block
     
     private float lastRotationTime = 0f;
     
+    [Header("Original Position")]
+    [Tooltip("Original position where the fan was placed (set automatically)")]
+    public Vector2 OGPos; // Original position for occupied tile calculations
+    
     private void Start()
     {
         // Normalize the blow direction to ensure consistent force
         blowDirection = blowDirection.normalized;
+    }
+    
+    // Method to set the original grid position (called when placed)
+    public void SetGridPosition(Vector2 position)
+    {
+        OGPos = position;
+    }
+    
+    // Get the fan force with player limits applied
+    public Vector2 GetLimitedFanForce()
+    {
+        Vector2 forceVector = blowDirection * fanForce;
+        
+        // Limit the force magnitude to maxPlayerForce
+        if (forceVector.magnitude > maxPlayerForce)
+        {
+            forceVector = forceVector.normalized * maxPlayerForce;
+        }
+        
+        return forceVector;
     }
     
     

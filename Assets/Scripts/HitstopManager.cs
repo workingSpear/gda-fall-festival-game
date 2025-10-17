@@ -20,7 +20,7 @@ public class HitstopManager : MonoBehaviour
     [Tooltip("Intensity of screen shake on death")]
     public float deathShakeIntensity = 0.3f;
     [Tooltip("Time before death object is destroyed")]
-    public float deathObjectLifetime = 5f;
+    public float deathObjectLifetime = 2f;
     
     [Header("Player Death Shake Settings")]
     [Tooltip("Separate ScreenShake component for player death effects")]
@@ -71,14 +71,14 @@ public class HitstopManager : MonoBehaviour
         public bool isEndTrigger; // True if this is an "end" trigger, false if "hazard"
     }
 
-    public void TriggerHitstop(Player player, GameObject deathPrefab, bool isEnd = false)
+    public void TriggerHitstop(Player player, GameObject deathPrefab, bool isEnd = false, bool isWinningEnd = false)
     {
-        StartCoroutine(HitStopEffect(player, deathPrefab, isEnd));
+        StartCoroutine(HitStopEffect(player, deathPrefab, isEnd, isWinningEnd));
     }
 
-    public void TriggerCloneHitstop(Clone clone, GameObject deathPrefab, bool isEnd = false)
+    public void TriggerCloneHitstop(Clone clone, GameObject deathPrefab, bool isEnd = false, bool isWinningEnd = false)
     {
-        StartCoroutine(CloneHitStopEffect(clone, deathPrefab, isEnd));
+        StartCoroutine(CloneHitStopEffect(clone, deathPrefab, isEnd, isWinningEnd));
     }
 
     void ExtendSharedBuffer()
@@ -87,7 +87,7 @@ public class HitstopManager : MonoBehaviour
         sharedBufferEndTime = Time.realtimeSinceStartup + hitStopBuffer;
     }
 
-    IEnumerator HitStopEffect(Player player, GameObject deathPrefab, bool isEnd)
+    IEnumerator HitStopEffect(Player player, GameObject deathPrefab, bool isEnd, bool isWinningEnd = false)
     {
         // If we're in buffer period, add a queue delay before starting
         if (isInBuffer)
@@ -130,7 +130,14 @@ public class HitstopManager : MonoBehaviour
             
             if (isEnd)
             {
-                hitStopColor = Color.white; // White for end trigger
+                if (isWinningEnd)
+                {
+                    hitStopColor = new Color(1f, 0.84f, 0f, 1f); // Golden color for winning end trigger
+                }
+                else
+                {
+                    hitStopColor = Color.white; // White for regular end trigger
+                }
             }
             else
             {
@@ -235,7 +242,7 @@ public class HitstopManager : MonoBehaviour
         // DO NOT disable or cleanup here - coordinator will do it
     }
 
-    IEnumerator CloneHitStopEffect(Clone clone, GameObject deathPrefab, bool isEnd)
+    IEnumerator CloneHitStopEffect(Clone clone, GameObject deathPrefab, bool isEnd, bool isWinningEnd = false)
     {
         // If we're in buffer period, add a queue delay before starting
         if (isInBuffer)
@@ -278,7 +285,14 @@ public class HitstopManager : MonoBehaviour
             
             if (isEnd)
             {
-                hitStopColor = Color.white; // White for end trigger
+                if (isWinningEnd)
+                {
+                    hitStopColor = new Color(1f, 0.84f, 0f, 1f); // Golden color for winning end trigger
+                }
+                else
+                {
+                    hitStopColor = Color.white; // White for regular end trigger
+                }
             }
             else
             {

@@ -175,6 +175,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Tear
   linkedTear: {fileID: 0}
   portalTag: portal
-  teleportCooldown: 2
+  teleportCooldown: 3
   cooldownOpacity: 0.3
   unlinkedOpacity: 0.5

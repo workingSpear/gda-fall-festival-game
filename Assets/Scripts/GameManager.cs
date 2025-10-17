@@ -112,6 +112,14 @@ public class GameManager : MonoBehaviour
     public GameObject player1RigidbodyClone;
     [Tooltip("Player 2 rigidbody clone prefab for raining effect")]
     public GameObject player2RigidbodyClone;
+    
+    [Header("Debug - Occupied Positions")]
+    [Tooltip("Show all occupied positions in inspector (read-only)")]
+    public bool showOccupiedPositions = true;
+    
+    [Header("All Occupied Positions (Read-Only)")]
+    [SerializeField] private Vector2[] allOccupiedPositions = new Vector2[0];
+    [SerializeField] private string occupiedPositionsString = "";
 
     private int roundCounter = 0;
     private bool isResetting = false;
@@ -142,8 +150,8 @@ public class GameManager : MonoBehaviour
     private System.Collections.Generic.List<Block> disabledBlocks = new System.Collections.Generic.List<Block>();
     
     // Points tracking
-    [SerializeField]private int player1Points = 0;
-    [SerializeField]private int player2Points = 0;
+    [SerializeField]public int player1Points = 0;
+    [SerializeField]public int player2Points = 0;
     
     // Game ending tracking
     private int totalBlocksPlaced = 0;
@@ -263,6 +271,9 @@ public class GameManager : MonoBehaviour
 
     void Update()
     {
+        // Update occupied positions display
+        UpdateOccupiedPositions();
+        
         // Update timer during platforming mode
         if (isTimerRunning && !isPickingMode && !isBuildingMode && !isWinMode && !hasTimedOut)
         {
@@ -479,7 +490,7 @@ public class GameManager : MonoBehaviour
         }
 
         // Start countdown timer when all players have spawned
-        timeRemaining = timerDuration + (roundCounter);
+        timeRemaining = timerDuration + (roundCounter * 0.75f);
         isTimerRunning = true;
         hasTimedOut = false;
         UpdateTimerDisplay();
@@ -959,6 +970,139 @@ public class GameManager : MonoBehaviour
         // Check if building mode UI is active
         return buildingModeUI != null && buildingModeUI.activeInHierarchy;
     }
+    
+    public bool IsInPickingMode()
+    {
+        return isPickingMode;
+    }
+    
+    // Weighted loot table selection for picking mode
+    GameObject SelectWeightedObject(System.Collections.Generic.List<int> availableIndices)
+    {
+        if (availableIndices.Count == 0) return null;
+        
+        // Create weighted list based on object properties
+        System.Collections.Generic.List<WeightedObject> weightedObjects = new System.Collections.Generic.List<WeightedObject>();
+        
+        foreach (int index in availableIndices)
+        {
+            GameObject obj = pickableObjects[index];
+            if (obj == null) continue;
+            
+            // Check round restrictions
+            if (!IsObjectAvailableForRound(obj)) continue;
+            
+            // Calculate weight based on object size
+            float weight = CalculateObjectWeight(obj);
+            if (weight > 0)
+            {
+                weightedObjects.Add(new WeightedObject { gameObject = obj, weight = weight, index = index });
+            }
+        }
+        
+        if (weightedObjects.Count == 0) return null;
+        
+        // Select based on weights
+        float totalWeight = 0f;
+        foreach (var weightedObj in weightedObjects)
+        {
+            totalWeight += weightedObj.weight;
+        }
+        
+        float randomValue = Random.Range(0f, totalWeight);
+        float currentWeight = 0f;
+        
+        foreach (var weightedObj in weightedObjects)
+        {
+            currentWeight += weightedObj.weight;
+            if (randomValue <= currentWeight)
+            {
+                return weightedObj.gameObject;
+            }
+        }
+        
+        // Fallback to first object
+        return weightedObjects[0].gameObject;
+    }
+    
+    // Check if object is available for current round
+    bool IsObjectAvailableForRound(GameObject obj)
+    {
+        if (obj == null) return false;
+        
+        string objName = obj.name.ToUpper();
+        
+        // Drinks not available before round 5
+        if (objName.Contains("DRINK") && roundCounter < 5)
+        {
+            return false;
+        }
+        
+        // BOMB objects not available before round 3
+        if (objName.Contains("BOMB") && roundCounter < 3)
+        {
+            return false;
+        }
+        
+        return true;
+    }
+    
+    // Calculate weight based on object size and round
+    float CalculateObjectWeight(GameObject obj)
+    {
+        if (obj == null) return 1f;
+        
+        // Try to get Block component to determine size
+        Block block = obj.GetComponent<Block>();
+        if (block != null)
+        {
+            if (block.size == 4)
+            {
+                // Size 4 objects: start at 0.3 weight and gradually decrease to 0 by round 25-30
+                if (roundCounter <= 25)
+                {
+                    // Linear interpolation from 0.3 at round 1 to 0 at round 25
+                    float t = (roundCounter - 1) / 24f; // t goes from 0 to 1 as round goes from 1 to 25
+                    return Mathf.Lerp(0.3f, 0f, t);
+                }
+                else
+                {
+                    // Completely unavailable after round 25
+                    return 0f;
+                }
+            }
+            else if (block.size == 1)
+            {
+                // Size 1 objects: consistent weight
+                return 1f;
+            }
+            else
+            {
+                // Linear scaling for other sizes with slight round adjustment
+                float baseWeight = 1f / block.size;
+                if (roundCounter <= 3)
+                {
+                    return baseWeight * 1.2f; // Slightly more likely in early rounds
+                }
+                else
+                {
+                    return baseWeight; // Normal weight in later rounds
+                }
+            }
+        }
+        
+        // Default weight if no Block component
+        return 1f;
+    }
+    
+    // Helper class for weighted selection
+    [System.Serializable]
+    public class WeightedObject
+    {
+        public GameObject gameObject;
+        public float weight;
+        public int index;
+    }
 
     void EnterPickingMode()
     {
@@ -1264,8 +1408,16 @@ public class GameManager : MonoBehaviour
         if (pickableObjects == null || pickableObjects.Length == 0)
             return;
         
-        // Calculate how many objects to select: max(3, min(roundCounter, pickableObjects.Length))
-        int numToSelect = Mathf.Max(3, roundCounter);
+        // Calculate how many objects to select: 3 items until round 5, then 3-5 items
+        int numToSelect;
+        if (roundCounter < 5)
+        {
+            numToSelect = 3; // Only 3 items until round 5
+        }
+        else
+        {
+            numToSelect = Random.Range(3, 6); // 3-5 items from round 5 onwards
+        }
         numToSelect = Mathf.Min(numToSelect, pickableObjects.Length);
         
         // Create a list of indices to randomly select from
@@ -1276,7 +1428,8 @@ public class GameManager : MonoBehaviour
         }
         
         // First, decide if we should spawn a drink this round (only 1 per round)
-        bool shouldSpawnDrink = availablePickableDrinks.Count > 0 && Random.Range(0f, 1f) < drinkSpawnProbability;
+        // Drinks not available before round 5
+        bool shouldSpawnDrink = availablePickableDrinks.Count > 0 && roundCounter >= 5 && Random.Range(0f, 1f) < drinkSpawnProbability;
         GameObject drinkPrefab = null;
         
         if (shouldSpawnDrink)
@@ -1292,7 +1445,7 @@ public class GameManager : MonoBehaviour
             availablePickableDrinks.RemoveAt(randomDrinkIndex);
         }
         
-        // Randomly select and spawn objects
+        // Randomly select and spawn objects using weighted loot table
         for (int i = 0; i < numToSelect; i++)
         {
             GameObject prefab = null;
@@ -1304,11 +1457,17 @@ public class GameManager : MonoBehaviour
             }
             else
             {
-                // Spawn a regular object
-            int randomIndex = Random.Range(0, availableIndices.Count);
-            int selectedIndex = availableIndices[randomIndex];
-                prefab = pickableObjects[selectedIndex];
-                availableIndices.RemoveAt(randomIndex);
+                // Use weighted selection for regular objects
+                prefab = SelectWeightedObject(availableIndices);
+                if (prefab != null)
+                {
+                    // Remove the selected object from available indices
+                    int selectedIndex = System.Array.IndexOf(pickableObjects, prefab);
+                    if (selectedIndex >= 0 && availableIndices.Contains(selectedIndex))
+                    {
+                        availableIndices.Remove(selectedIndex);
+                    }
+                }
             }
             
             if (prefab != null)
@@ -1473,6 +1632,16 @@ public class GameManager : MonoBehaviour
             placedBlock.transform.SetParent(objectTransformMommy);
         }
 
+        // Set the original grid position for Fan blocks
+        if (placedBlock.GetComponent<Fan>() != null)
+        {
+            Fan fan = placedBlock.GetComponent<Fan>();
+            fan.SetGridPosition(new Vector2(blockPosition.x, blockPosition.y));
+        }
+        
+        // Update occupied positions display
+        UpdateOccupiedPositions();
+
         // No need to manually track blocked positions - we scan dynamically
 
             // Mark that this player has placed a block
@@ -1552,6 +1721,16 @@ public class GameManager : MonoBehaviour
             
             // Get the block's anchor position
             Vector2 anchor = new Vector2(block.transform.position.x, block.transform.position.y);
+            
+            // Special handling for objects with "fanMod" tag - use OGPos from Fan component
+            if (block.CompareTag("fanMod"))
+            {
+                Fan fan = block.GetComponent<Fan>();
+                if (fan != null)
+                {
+                    anchor = fan.OGPos;
+                }
+            }
             
             // Calculate all positions this block occupies based on its size
             System.Collections.Generic.List<Vector2> occupiedPositions = GetOccupiedPositions(anchor, block.size);
@@ -2179,7 +2358,7 @@ public class GameManager : MonoBehaviour
         // Enable first text
         if (blocksPlacedText != null)
         {
-            blocksPlacedText.text = $"{totalBlocksPlaced} BLOCKS PLACED.";
+            blocksPlacedText.text = "<color=#e0dbcd>"+ $"{totalBlocksPlaced}" + "<color=#cc8781>"+ " BLOCKS " + "<color=#d9b472>" + "PLACED.";
             blocksPlacedText.gameObject.SetActive(true);
         }
         
@@ -2208,7 +2387,7 @@ public class GameManager : MonoBehaviour
         if (recordedDeathsText != null)
         {
             int totalDeaths = player1Deaths + player2Deaths;
-            recordedDeathsText.text = $"{totalDeaths} RECORDED DEATHS.";
+            recordedDeathsText.text = "<color=#e0dbcd>"+ $"{totalDeaths}" + "<color=#3da788>"+ " RECORDED " + "<color=#1b807b>" + "DEATHS.";
             recordedDeathsText.gameObject.SetActive(true);
         }
         
@@ -2335,6 +2514,51 @@ public class GameManager : MonoBehaviour
             }
             
             yield return new WaitForSeconds(0.1f);
+        }
+    }
+    
+    void UpdateOccupiedPositions()
+    {
+        if (!showOccupiedPositions) return;
+        
+        System.Collections.Generic.List<Vector2> allPositions = new System.Collections.Generic.List<Vector2>();
+        
+        if (objectTransformMommy != null)
+        {
+            // Get all Block components under Object Transform Mommy
+            Block[] placedBlocks = objectTransformMommy.GetComponentsInChildren<Block>();
+            
+            foreach (Block block in placedBlocks)
+            {
+                if (block == null) continue;
+                
+                // Get the block's anchor position
+                Vector2 anchor = new Vector2(block.transform.position.x, block.transform.position.y);
+                
+                // Special handling for objects with "fanMod" tag - use OGPos from Fan component
+                if (block.CompareTag("fanMod"))
+                {
+                    Fan fan = block.GetComponent<Fan>();
+                    if (fan != null)
+                    {
+                        anchor = fan.OGPos;
+                    }
+                }
+                
+                // Calculate all positions this block occupies based on its size
+                System.Collections.Generic.List<Vector2> occupiedPositions = GetOccupiedPositions(anchor, block.size);
+                allPositions.AddRange(occupiedPositions);
+            }
+        }
+        
+        // Update the serialized fields for inspector display
+        allOccupiedPositions = allPositions.ToArray();
+        
+        // Create a readable string representation
+        occupiedPositionsString = $"Total Occupied Positions: {allPositions.Count}\n\n";
+        for (int i = 0; i < allPositions.Count; i++)
+        {
+            occupiedPositionsString += $"  {i + 1}: ({allPositions[i].x:F2}, {allPositions[i].y:F2})\n";
         }
     }
 }

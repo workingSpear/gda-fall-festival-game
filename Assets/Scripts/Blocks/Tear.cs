@@ -126,6 +126,13 @@ public class Tear : MonoBehaviour
     {
         if (spriteRenderer != null)
         {
+            // Don't change opacity during Building or Picking mode
+            GameManager gameManager = GameObject.FindGameObjectWithTag("gamemanager")?.GetComponent<GameManager>();
+            if (gameManager != null && (gameManager.IsInBuildingMode() || gameManager.IsInPickingMode()))
+            {
+                return; // Skip opacity changes during Building or Picking mode
+            }
+            
             if (isOnCooldown)
             {
                 // Cooldown opacity (lowest priority)
@@ -151,14 +158,14 @@ public class Tear : MonoBehaviour
     // Method to trigger cooldown when teleportation occurs
     public void TriggerCooldown()
     {
-        if (!isOnCooldown)
-        {
-            isOnCooldown = true;
-            lastTeleportTime = Time.time;
-            
-            // Update opacity to show cooldown state
-            UpdateOpacity();
-        }
+        // Always trigger cooldown (reset if already on cooldown)
+        isOnCooldown = true;
+        lastTeleportTime = Time.time;
+        
+        Debug.Log($"Tear {gameObject.name} triggered cooldown");
+        
+        // Update opacity to show cooldown state
+        UpdateOpacity();
     }
     
     // Method to check if teleporter is on cooldown

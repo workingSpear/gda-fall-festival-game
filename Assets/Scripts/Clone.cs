@@ -287,6 +287,13 @@ public class Clone : MonoBehaviour
             {
                 hitstopManager.TriggerCloneHitstop(this, deathPrefab, false);
             }
+            
+            // Notify GameManager of clone death
+            GameManager gameManager = GameObject.FindGameObjectWithTag("gamemanager")?.GetComponent<GameManager>();
+            if (gameManager != null)
+            {
+                gameManager.OnPlayerDeath(playerMode, true); // true = real death from hazard
+            }
         }
         else if (other.CompareTag("portal"))
         {
@@ -324,12 +331,8 @@ public class Clone : MonoBehaviour
             Fan fan = other.GetComponentInParent<Fan>();
             if (fan != null)
             {
-                // Get the fan's blow direction and force
-                Vector2 blowDirection = fan.blowDirection;
-                float fanForceValue = fan.fanForce;
-                
-                // Calculate the force vector and store it
-                fanForce = blowDirection * fanForceValue;
+                // Get the limited fan force (with player limits applied)
+                fanForce = fan.GetLimitedFanForce();
             }
         }
         else if (other.CompareTag("fanBackButton"))
@@ -368,10 +371,18 @@ public class Clone : MonoBehaviour
             // Get the appropriate death prefab based on player mode (though won't be used for end)
             GameObject deathPrefab = playerMode == Player.PlayerMode.Player1 ? player1DeathPrefab : player2DeathPrefab;
             
+            // Check if this player is about to win (reach 15 points)
+            bool isWinningEnd = false;
+            if (gameManager != null)
+            {
+                int currentPoints = (playerMode == Player.PlayerMode.Player1) ? gameManager.player1Points : gameManager.player2Points;
+                isWinningEnd = (currentPoints >= 14); // Will reach 15 points after this end
+            }
+            
             // Call hitstop manager to handle the effect (end hitstop)
             if (hitstopManager != null)
             {
-                hitstopManager.TriggerCloneHitstop(this, deathPrefab, true);
+                hitstopManager.TriggerCloneHitstop(this, deathPrefab, true, isWinningEnd);
             }
         }
     }
