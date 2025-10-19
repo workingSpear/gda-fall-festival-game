@@ -326,6 +326,12 @@ public class GameManager : MonoBehaviour
             StaticNoise.SetActive(true);
         }
         
+        // Start transition to Balkan music (platformer music)
+        if (audioManager != null)
+        {
+            audioManager.CrossfadeToPlatformerManually();
+        }
+        
         // Wait for static transition duration
         yield return new WaitForSeconds(staticNoiseDuration);
         
@@ -1455,12 +1461,12 @@ public class GameManager : MonoBehaviour
         {
             if (block.size == 4)
             {
-                // Size 4 objects: start at 0.3 weight and gradually decrease to 0 by round 25-30
+                // Size 4 objects: start at 0.8 weight and gradually decrease to 0 by round 25-30
                 if (roundCounter <= 25)
                 {
-                    // Linear interpolation from 0.3 at round 1 to 0 at round 25
+                    // Linear interpolation from 0.8 at round 1 to 0 at round 25
                     float t = (roundCounter - 1) / 24f; // t goes from 0 to 1 as round goes from 1 to 25
-                    return Mathf.Lerp(0.3f, 0f, t);
+                    return Mathf.Lerp(0.8f, 0f, t);
                 }
                 else
                 {
@@ -1918,15 +1924,15 @@ public class GameManager : MonoBehaviour
         if (pickableObjects == null || pickableObjects.Length == 0)
             return;
         
-        // Calculate how many objects to select: 3 items until round 5, then 3-5 items
+        // Calculate how many objects to select: 5 items until round 5, then 5-8 items
         int numToSelect;
         if (roundCounter < 5)
         {
-            numToSelect = 3; // Only 3 items until round 5
+            numToSelect = 5; // 5 items until round 5
         }
         else
         {
-            numToSelect = Random.Range(3, 6); // 3-5 items from round 5 onwards
+            numToSelect = Random.Range(5, 9); // 5-8 items from round 5 onwards
         }
         numToSelect = Mathf.Min(numToSelect, pickableObjects.Length);
         

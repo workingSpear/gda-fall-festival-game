@@ -34,6 +34,9 @@ public class AudioManager : MonoBehaviour
     [Header("Crossfade Settings")]
     [Tooltip("Duration of crossfade transitions (should match StaticNoise duration)")]
     public float crossfadeDuration = 2f;
+    [Tooltip("Volume level for crossfade transitions (0.0 to 1.0)")]
+    [Range(0f, 1f)]
+    public float crossfadeVolume = 1f;
     
     private Coroutine crossfadeCoroutine;
     private Coroutine staticNoiseCoroutine;
@@ -124,13 +127,13 @@ public class AudioManager : MonoBehaviour
             // Fade out the source we're transitioning from
             if (fromSource != null)
             {
-                fromSource.volume = Mathf.Lerp(1f, 0f, t);
+                fromSource.volume = Mathf.Lerp(crossfadeVolume, 0f, t);
             }
             
             // Fade in the source we're transitioning to
             if (toSource != null)
             {
-                toSource.volume = Mathf.Lerp(0f, 1f, t);
+                toSource.volume = Mathf.Lerp(0f, crossfadeVolume, t);
             }
             
             yield return null;
@@ -145,7 +148,7 @@ public class AudioManager : MonoBehaviour
         
         if (toSource != null)
         {
-            toSource.volume = 1f;
+            toSource.volume = crossfadeVolume;
         }
         
         crossfadeCoroutine = null;

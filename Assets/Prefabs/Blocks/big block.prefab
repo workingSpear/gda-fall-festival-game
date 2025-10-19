@@ -81,7 +81,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 2
-  m_Sprite: {fileID: 7953115609395313093, guid: 88672cfcddee7e64b8c89ceaf5bf123f, type: 3}
+  m_Sprite: {fileID: 6327717682784224682, guid: a55592a08f387814791ef125dec0b8c8, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -153,7 +153,7 @@ MonoBehaviour:
   size: 4
   blockName: BIG BLOCK
   blockDescription: 
-  blockSprite: {fileID: 7953115609395313093, guid: 88672cfcddee7e64b8c89ceaf5bf123f, type: 3}
+  blockSprite: {fileID: 6327717682784224682, guid: a55592a08f387814791ef125dec0b8c8, type: 3}
   blockPrefab: {fileID: 0}
   blockPrefabRigidBody: {fileID: 3897939434625992821, guid: 5a38a0e2279c6df4fa921cd44d9ceb97, type: 3}
   tint: {fileID: 0}

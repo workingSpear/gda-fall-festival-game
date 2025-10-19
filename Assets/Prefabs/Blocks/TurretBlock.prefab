@@ -261,10 +261,10 @@ MonoBehaviour:
   isDisabled: 0
   spriteRenderer: {fileID: 5962658036564405897}
   projectilePrefab: {fileID: 8637294880294769088, guid: 549d2f8ab1f9ce74aa67ba2159d53f67, type: 3}
-  fireRate: 1
-  startDelay: 2
+  fireRate: 0.75
+  startDelay: 1.25
   firePoint: {fileID: 4930282574219841929}
-  projectileSpeed: 10
+  projectileSpeed: 12
   laserLine: {fileID: 5614239068805032139}
   laserRange: 20
   laserBlockingLayers:
@@ -272,7 +272,7 @@ MonoBehaviour:
     m_Bits: 4294967295
   laserColor: {r: 1, g: 0, b: 0, a: 1}
   laserWidth: 0.02
-  maxTileRange: 4
+  maxTileRange: 5
   tileSize: 0.5
   showRangeIndicator: 1
   rangeIndicatorColor: {r: 1, g: 0, b: 0, a: 0.3}
