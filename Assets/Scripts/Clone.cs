@@ -6,6 +6,9 @@ public class Clone : MonoBehaviour
     public Vector2 startPosition;
     public int framesBeforeNextVelocity;
     public float playbackSpeed = 1f;
+    [Header("Jump Settings")]
+    [Tooltip("Multiplier for clone jump strength (1.0 = normal, 1.5 = 50% stronger)")]
+    public float jumpStrengthMultiplier = 1.2f;
     
     public int serialNumber;
     public bool isBuildingMode = false;
@@ -17,6 +20,9 @@ public class Clone : MonoBehaviour
     [Tooltip("Prefab to spawn for Player 2 clone on death")]
     public GameObject player2DeathPrefab;
 
+    [Header("Animation")]
+    public Animator animator;
+    
     [Header("Collider References")]
     public BoxCollider2D jumpableHead;
 
@@ -30,6 +36,8 @@ public class Clone : MonoBehaviour
     public bool hasBeenHitStopped = false;
     [HideInInspector]
     public bool hasInvertedControls = false;
+    [HideInInspector]
+    public bool hasTriggeredRapChangeThisRound = false;
     
     // Portal teleportation cooldown
     private bool canTeleport = true;
@@ -37,11 +45,21 @@ public class Clone : MonoBehaviour
     // Fan force tracking
     private Vector2 fanForce = Vector2.zero;
     [SerializeField] HitstopManager hitstopManager;
+    
+    // Animation tracking
+    private Vector2 previousVelocity;
+    private float jumpThreshold = 8f; // Threshold to detect jump based on sudden upward velocity change
 
     void Awake()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
         rb = GetComponent<Rigidbody2D>();
+        
+        // Get animator if not assigned
+        if (animator == null)
+        {
+            animator = GetComponent<Animator>();
+        }
         
         // Find hitstop manager from gamemanager tag
         GameObject gameManager = GameObject.FindGameObjectWithTag("gamemanager");
@@ -62,11 +80,23 @@ public class Clone : MonoBehaviour
             rb.bodyType = RigidbodyType2D.Dynamic;
             rb.gravityScale = 2f; // Match player gravity
         }
+        
+        // Initialize animation tracking
+        previousVelocity = Vector2.zero;
     }
 
     void Start()
     {  
         UpdateOpacity();
+    }
+    
+    // Method to initialize animator based on player mode (called after playerMode is set)
+    public void InitializeAnimator()
+    {
+        if (animator != null)
+        {
+            animator.SetBool("isPlayer1", playerMode == Player.PlayerMode.Player1);
+        }
     }
 
     void Update()
@@ -99,9 +129,27 @@ public class Clone : MonoBehaviour
                     velocity.x = -velocity.x;
                 }
                 
+                // Boost jump strength by multiplying positive Y velocity (upward movement)
+                if (velocity.y > 0)
+                {
+                    velocity.y *= jumpStrengthMultiplier;
+                }
+                
                 // Apply fan force to the recorded velocity
                 Vector2 finalVelocity = velocity + fanForce;
                 rb.linearVelocity = finalVelocity;
+                
+                // Detect jump based on sudden upward velocity change
+                if (animator != null)
+                {
+                    float verticalVelocityChange = finalVelocity.y - previousVelocity.y;
+                    if (verticalVelocityChange > jumpThreshold)
+                    {
+                        animator.SetTrigger("jump");
+                    }
+                }
+                
+                previousVelocity = finalVelocity;
                 currentVelocityIndex++;
             }
             else
@@ -120,6 +168,20 @@ public class Clone : MonoBehaviour
                     }
                 }
             }
+        }
+        
+        // Update animator parameters based on current movement
+        if (animator != null && rb != null)
+        {
+            // isRunning if moving in X direction
+            bool isMoving = Mathf.Abs(rb.linearVelocity.x) > 0.1f;
+            animator.SetBool("isRunning", isMoving);
+        }
+        
+        // Flip sprite based on movement direction
+        if (spriteRenderer != null && rb != null && Mathf.Abs(rb.linearVelocity.x) > 0.1f)
+        {
+            spriteRenderer.flipX = -rb.linearVelocity.x < 0;
         }
     }
 
@@ -240,21 +302,8 @@ public class Clone : MonoBehaviour
         {
             Color color = spriteRenderer.color;
             
-            // Newest clone (serialNumber 0) = 77% opacity
-            // Second newest (serialNumber 1) = 38% opacity  
-            // All others = 7% opacity
-            if (serialNumber == 0)
-            {
-                color.a = 0.5f;
-            }
-            else if (serialNumber == 1)
-            {
-                color.a = 0.2f;
-            }
-            else
-            {
-                color.a = 0.03f;
-            }
+            // All clones have the same opacity
+            color.a = 0.1f;
             
             spriteRenderer.color = color;
         }
@@ -279,6 +328,12 @@ public class Clone : MonoBehaviour
             // Mark that this clone has been hitstopped
             hasBeenHitStopped = true;
             
+            // Trigger death animation
+            if (animator != null)
+            {
+                animator.SetTrigger("dead");
+            }
+            
             // Get the appropriate death prefab based on player mode
             GameObject deathPrefab = playerMode == Player.PlayerMode.Player1 ? player1DeathPrefab : player2DeathPrefab;
             
@@ -293,6 +348,12 @@ public class Clone : MonoBehaviour
             if (gameManager != null)
             {
                 gameManager.OnPlayerDeath(playerMode, true, true); // true = real death from hazard, true = from clone
+                
+                // Play dead sound when clone dies from hazard (not from end-of-round cleanup)
+                if (gameManager.audioManager != null)
+                {
+                    gameManager.audioManager.PlayDeadClip();
+                }
             }
         }
         else if (other.CompareTag("portal"))
@@ -366,6 +427,12 @@ public class Clone : MonoBehaviour
             if (gameManager != null)
             {
                 gameManager.AwardPoint(playerMode);
+                
+                // Play made it sound when clone reaches the end
+                if (gameManager.audioManager != null)
+                {
+                    gameManager.audioManager.PlayMadeItClip();
+                }
             }
             
             // Get the appropriate death prefab based on player mode (though won't be used for end)

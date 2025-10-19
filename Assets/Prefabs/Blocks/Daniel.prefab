@@ -82,7 +82,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 2
-  m_Sprite: {fileID: -5444141793433982336, guid: 7540d4b8bbc7d6442b9e0ec41de4c67e, type: 3}
+  m_Sprite: {fileID: 9183835294402744906, guid: 0cb864c772da42346baaebb93002abe5, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -130,8 +130,8 @@ BoxCollider2D:
   m_Offset: {x: 0.5, y: 0.5}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
-    pivot: {x: 0, y: 0}
-    oldSize: {x: 1.032258, y: 1.032258}
+    pivot: {x: 0.5, y: 0.5}
+    oldSize: {x: 0.14, y: 0.32}
     newSize: {x: 1, y: 1}
     adaptiveTilingThreshold: 0.5
     drawMode: 0
@@ -154,7 +154,7 @@ MonoBehaviour:
   size: 1
   blockName: DANIEL
   blockDescription: drinkable. you and your clones' controls become flipped.
-  blockSprite: {fileID: -5444141793433982336, guid: 7540d4b8bbc7d6442b9e0ec41de4c67e, type: 3}
+  blockSprite: {fileID: 9183835294402744906, guid: 0cb864c772da42346baaebb93002abe5, type: 3}
   blockPrefab: {fileID: 2792140714948998591}
   blockPrefabRigidBody: {fileID: 2792140714948998591, guid: be3a85200a72b924682ef58a0a02da73, type: 3}
   tint: {fileID: 0}

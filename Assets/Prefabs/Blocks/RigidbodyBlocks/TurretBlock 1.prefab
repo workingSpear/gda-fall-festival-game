@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4930282574219841929}
-  - component: {fileID: 7755193592568663828}
+  - component: {fileID: 6640369971792249598}
   m_Layer: 0
   m_Name: GameObject
   m_TagString: object
@@ -32,8 +32,8 @@ Transform:
   m_Children: []
   m_Father: {fileID: 2986080116291886847}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!60 &7755193592568663828
-PolygonCollider2D:
+--- !u!61 &6640369971792249598
+BoxCollider2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -76,21 +76,8 @@ PolygonCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Points:
-    m_Paths:
-    - - {x: 0.25961193, y: 0.5161779}
-      - {x: -0.47313458, y: 0.4919254}
-      - {x: -0.48899627, y: 0.209206}
-      - {x: -0.1864058, y: 0.21794178}
-      - {x: -0.16179575, y: 0.0026729405}
-      - {x: 0.07570775, y: -0.011699162}
-      - {x: 0.1706279, y: -0.16450222}
-      - {x: 0.24415302, y: -0.49630272}
-      - {x: 0.48748076, y: -0.50220287}
-      - {x: 0.4954298, y: -0.10668274}
-      - {x: 0.3979299, y: 0.17556609}
-      - {x: 0.47313458, y: 0.49192554}
-  m_UseDelaunayMesh: 0
+  m_Size: {x: 0.49, y: 1}
+  m_EdgeRadius: 0
 --- !u!1 &2953617085689788972
 GameObject:
   m_ObjectHideFlags: 0
@@ -134,8 +121,8 @@ GameObject:
   - component: {fileID: 2986080116291886847}
   - component: {fileID: 5962658036564405897}
   - component: {fileID: 3687153836228419887}
-  - component: {fileID: 4932030535179862276}
   - component: {fileID: 1911329633670454076}
+  - component: {fileID: 1626232175565113656}
   m_Layer: 8
   m_Name: Block
   m_TagString: Untagged
@@ -206,7 +193,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 2
-  m_Sprite: {fileID: -5123327587837605992, guid: 50926542885c57f49b5d87748a55c111, type: 3}
+  m_Sprite: {fileID: 7791961295675551786, guid: d4559765d13f01544ad842fe179549a0, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -244,8 +231,31 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 0
---- !u!60 &4932030535179862276
-PolygonCollider2D:
+--- !u!114 &1911329633670454076
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6151816909206094456}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b3811067806a67c43832db0095ce53c2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Block
+  size: 1
+  blockName: GLOCK
+  blockDescription: Has a range of 7 tiles. Fires every few seconds to eliminate
+    targets.
+  blockSprite: {fileID: 7791961295675551786, guid: 35bd6f9568a7ec34e941555c6e46721b, type: 3}
+  blockPrefab: {fileID: 2953617085689788972, guid: 50162a4aebe06e14bb2c037056889c8d, type: 3}
+  blockPrefabRigidBody: {fileID: 2953617085689788972}
+  tint: {fileID: 0}
+  originalColor: {r: 0, g: 0, b: 0, a: 0}
+  isDisabled: 0
+  spriteRenderer: {fileID: 0}
+--- !u!61 &1626232175565113656
+BoxCollider2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -288,41 +298,5 @@ PolygonCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Points:
-    m_Paths:
-    - - {x: 0.25961193, y: 0.5161779}
-      - {x: -0.47313458, y: 0.4919254}
-      - {x: -0.48899627, y: 0.209206}
-      - {x: -0.1864058, y: 0.21794178}
-      - {x: -0.16179575, y: 0.0026729405}
-      - {x: 0.07570775, y: -0.011699162}
-      - {x: 0.1706279, y: -0.16450222}
-      - {x: 0.24415302, y: -0.49630272}
-      - {x: 0.48748076, y: -0.50220287}
-      - {x: 0.4954298, y: -0.10668274}
-      - {x: 0.3979299, y: 0.17556609}
-      - {x: 0.47313458, y: 0.49192554}
-  m_UseDelaunayMesh: 0
---- !u!114 &1911329633670454076
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6151816909206094456}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b3811067806a67c43832db0095ce53c2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Block
-  size: 1
-  blockName: GLOCK
-  blockDescription: Has a range of 7 tiles. Fires every few seconds to eliminate
-    targets.
-  blockSprite: {fileID: -5123327587837605992, guid: ba8bd1a69d8589a4bb05733df555427f, type: 3}
-  blockPrefab: {fileID: 2953617085689788972, guid: 50162a4aebe06e14bb2c037056889c8d, type: 3}
-  blockPrefabRigidBody: {fileID: 2953617085689788972}
-  tint: {fileID: 0}
-  originalColor: {r: 0, g: 0, b: 0, a: 0}
-  isDisabled: 0
-  spriteRenderer: {fileID: 0}
+  m_Size: {x: 0.49, y: 1}
+  m_EdgeRadius: 0

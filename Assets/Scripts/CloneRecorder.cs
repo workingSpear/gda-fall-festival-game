@@ -224,12 +224,11 @@ public class CloneRecorder : MonoBehaviour
             // Create a clone and pass it the recorded velocities
             if (clonePrefab != null && recordedVelocities.Length > 0)
             {
-                // Update existing clones' serial numbers
+                // Update existing clones' opacity
                 foreach (Clone existingClone in player1Clones)
                 {
                     if (existingClone != null)
                     {
-                        existingClone.serialNumber++;
                         existingClone.UpdateOpacity();
                     }
                 }
@@ -245,8 +244,8 @@ public class CloneRecorder : MonoBehaviour
                     clone.startPosition = player1StartPosition;
                     clone.framesBeforeNextVelocity = framesBeforeNextSnapShot;
                     clone.playbackSpeed = playbackSpeed;
-                    clone.serialNumber = 0; // Newest clone
                     clone.playerMode = Player.PlayerMode.Player1;
+                    clone.InitializeAnimator(); // Set animator parameter based on player mode
                     clone.UpdateOpacity();
                     // Don't call PlayRecording here - GameManager handles staggered spawning
                     player1Clones.Insert(0, clone); // Insert at beginning
@@ -268,12 +267,11 @@ public class CloneRecorder : MonoBehaviour
             // Create a clone and pass it the recorded velocities
             if (clonePrefab != null && recordedVelocities.Length > 0)
             {
-                // Update existing clones' serial numbers
+                // Update existing clones' opacity
                 foreach (Clone existingClone in player2Clones)
                 {
                     if (existingClone != null)
                     {
-                        existingClone.serialNumber++;
                         existingClone.UpdateOpacity();
                     }
                 }
@@ -289,8 +287,8 @@ public class CloneRecorder : MonoBehaviour
                     clone.startPosition = player2StartPosition;
                     clone.framesBeforeNextVelocity = framesBeforeNextSnapShot;
                     clone.playbackSpeed = playbackSpeed;
-                    clone.serialNumber = 0; // Newest clone
                     clone.playerMode = Player.PlayerMode.Player2;
+                    clone.InitializeAnimator(); // Set animator parameter based on player mode
                     clone.UpdateOpacity();
                     // Don't call PlayRecording here - GameManager handles staggered spawning
                     player2Clones.Insert(0, clone); // Insert at beginning

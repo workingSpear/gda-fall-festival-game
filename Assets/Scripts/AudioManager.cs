@@ -20,6 +20,11 @@ public class AudioManager : MonoBehaviour
     public AudioClip playerSpawnBuzzerClip;
     [Tooltip("Buzzer sound for timer running out")]
     public AudioClip timerBuzzerClip;
+    public AudioClip madeItClip;
+    public AudioClip deadClip;
+    public AudioClip placeClip;
+    public AudioClip cursorBlipClip;
+    public AudioClip pickupClip;
     
     [Header("Volume Settings")]
     [Tooltip("Volume for sound effects (0.0 to 1.0)")]
@@ -208,5 +213,35 @@ public class AudioManager : MonoBehaviour
     public void PlayTimerBuzzer()
     {
         PlaySoundEffect(timerBuzzerClip, loop: false, volumeMultiplier: 1f);
+    }
+    
+    // Public method to play made it sound when player or clone reaches the end
+    public void PlayMadeItClip()
+    {
+        PlaySoundEffect(madeItClip, loop: false, volumeMultiplier: 1f);
+    }
+    
+    // Public method to play dead sound when player or clone dies
+    public void PlayDeadClip()
+    {
+        PlaySoundEffect(deadClip, loop: false, volumeMultiplier: 1f);
+    }
+    
+    // Public method to play place sound when placing objects in building mode
+    public void PlayPlaceClip()
+    {
+        PlaySoundEffect(placeClip, loop: false, volumeMultiplier: 1f);
+    }
+    
+    // Public method to play cursor blip sound when moving cursor in building mode
+    public void PlayCursorBlipClip()
+    {
+        PlaySoundEffect(cursorBlipClip, loop: false, volumeMultiplier: 1f);
+    }
+    
+    // Public method to play pickup sound when selecting objects in picking mode
+    public void PlayPickupClip()
+    {
+        PlaySoundEffect(pickupClip, loop: false, volumeMultiplier: 1f);
     }
 }

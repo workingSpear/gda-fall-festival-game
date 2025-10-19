@@ -19,6 +19,8 @@ public class Fan : Block
     public float rotationCooldown = 0.5f;
     [Tooltip("Pivot point for rotation (set in inspector)")]
     public Transform rotationPivot;
+    [Tooltip("Animator component for fan animations")]
+    public Animator fanAnimator;
     
     private float lastRotationTime = 0f;
     
@@ -30,6 +32,18 @@ public class Fan : Block
     {
         // Normalize the blow direction to ensure consistent force
         blowDirection = blowDirection.normalized;
+    }
+    
+    private void Update()
+    {
+        // Check if cooldown has ended and set animator boolean to false
+        if (fanAnimator != null && fanAnimator.GetBool("cooldown"))
+        {
+            if (Time.time - lastRotationTime >= rotationCooldown)
+            {
+                fanAnimator.SetBool("cooldown", false);
+            }
+        }
     }
     
     // Method to set the original grid position (called when placed)
@@ -94,6 +108,12 @@ public class Fan : Block
         
         // Update the last rotation time
         lastRotationTime = Time.time;
+        
+        // Set animator cooldown boolean to true when fan rotates
+        if (fanAnimator != null)
+        {
+            fanAnimator.SetBool("cooldown", true);
+        }
     }
     
     protected override void DisableBlockBehavior()

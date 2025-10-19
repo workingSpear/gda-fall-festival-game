@@ -1,4 +1,5 @@
 using UnityEngine;
+using TMPro;
 
 public class Cursor : MonoBehaviour
 {
@@ -23,6 +24,12 @@ public class Cursor : MonoBehaviour
     public Sprite pickingCursorSprite;
     public Sprite buildingCursorSprite;
     
+    [Header("Building Mode Colors")]
+    [Tooltip("Color for Player 1 cursor during building mode")]
+    public Color player1BuildingColor = Color.red;
+    [Tooltip("Color for Player 2 cursor during building mode")]
+    public Color player2BuildingColor = Color.blue;
+    
     [Header("Block Settings")]
     public SpriteRenderer blockSprite;
     
@@ -30,6 +37,7 @@ public class Cursor : MonoBehaviour
     private Block currentBlock;
     private GameObject currentPickableObject; // Track current pickable object in picking mode
     private Sprite originalCursorSprite;
+    private Color originalCursorColor = Color.white; // Store original cursor color
     private int currentBlockSize = 1; // Track the size of the currently selected block
     
     // Key repeat for grid movement
@@ -38,6 +46,9 @@ public class Cursor : MonoBehaviour
     private float initialDelay = 0.3f; // Delay before continuous movement starts
     private float repeatRate = 0.1f; // Time between repeated movements
     private float nextMoveTime = 0f;
+    
+    // Tutorial trigger tracking
+    private string currentTriggerTag = "";
     
     public Block GetCurrentBlock()
     {
@@ -79,10 +90,11 @@ public class Cursor : MonoBehaviour
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
         
-        // Save the original cursor sprite
+        // Save the original cursor sprite and color
         if (spriteRenderer != null)
         {
             originalCursorSprite = spriteRenderer.sprite;
+            originalCursorColor = spriteRenderer.color;
             spriteRenderer.enabled = false;
         }
         
@@ -127,6 +139,12 @@ public class Cursor : MonoBehaviour
             {
                 MoveCursor();
             }
+        }
+        
+        // Handle Q key input for tutorial interactions (only for Player 1)
+        if (playerMode == Player.PlayerMode.Player1 && isCursorEnabled && Input.GetKeyDown(KeyCode.Q))
+        {
+            HandleTutorialInput();
         }
     }
 
@@ -340,6 +358,13 @@ public class Cursor : MonoBehaviour
             }
             
             transform.position = newPos;
+            
+            // Play cursor blip sound when moving in building mode
+            GameManager gameManager = GameObject.FindGameObjectWithTag("gamemanager")?.GetComponent<GameManager>();
+            if (gameManager != null && gameManager.audioManager != null)
+            {
+                gameManager.audioManager.PlayCursorBlipClip();
+            }
         }
     }
 
@@ -439,6 +464,12 @@ public class Cursor : MonoBehaviour
         if (spriteRenderer != null)
         {
             spriteRenderer.enabled = true;
+            
+            // Set color to white when enabling for picking mode or as default
+            if (pickingMode)
+            {
+                spriteRenderer.color = Color.white;
+            }
         }
         
         // Enable block sprite when cursor is enabled
@@ -462,6 +493,7 @@ public class Cursor : MonoBehaviour
         
         if (spriteRenderer != null)
         {
+            spriteRenderer.color = Color.white; // Reset cursor color to white when disabling
             spriteRenderer.enabled = false;
         }
         
@@ -509,9 +541,51 @@ public class Cursor : MonoBehaviour
             }
         }
         
+        // In title screen mode, handle tutorial-related tag triggers
+        if (isCursorEnabled && (other.CompareTag("how2play") || other.CompareTag("rightArrow") || other.CompareTag("leftArrow") || other.CompareTag("runGame")))
+        {
+            // Check if we're in title screen mode
+            GameObject gameManagerObj = GameObject.FindGameObjectWithTag("gamemanager");
+            if (gameManagerObj != null)
+            {
+                GameManager gameManager = gameManagerObj.GetComponent<GameManager>();
+                if (gameManager != null && gameManager.IsInTitleScreenMode())
+                {
+                    // Track the current trigger tag
+                    currentTriggerTag = other.tag;
+                    
+                    // Handle trigger-specific behavior (font size changes)
+                    if (other.CompareTag("how2play"))
+                    {
+                        // Get the TextMeshPro component from the trigger object
+                        TextMeshPro textComponent = other.GetComponent<TextMeshPro>();
+                        if (textComponent != null)
+                        {
+                            textComponent.fontSize = 8f;
+                        }
+                    }
+                    else if (other.CompareTag("rightArrow") || other.CompareTag("leftArrow"))
+                    {
+                        // Get the TextMeshPro component from the trigger object
+                        TextMeshPro textComponent = other.GetComponent<TextMeshPro>();
+                        if (textComponent != null)
+                        {
+                            textComponent.fontSize = 5f;
+                        }
+                    }
+                    else if (other.CompareTag("runGame"))
+                    {
+                        // Get the TextMeshPro component from the trigger object
+                        TextMeshPro textComponent = other.GetComponent<TextMeshPro>();
+                        if (textComponent != null)
+                        {
+                            textComponent.fontSize = 9f;
+                        }
+                    }
+                }
+            }
+        }
     }
-
-    
 
     void OnTriggerExit2D(Collider2D other)
     {
@@ -540,6 +614,54 @@ public class Cursor : MonoBehaviour
                 }
             }
         }
+        
+        // In title screen mode, handle tutorial-related tag triggers
+        if (isCursorEnabled && (other.CompareTag("how2play") || other.CompareTag("rightArrow") || other.CompareTag("leftArrow") || other.CompareTag("runGame")))
+        {
+            // Check if we're in title screen mode
+            GameObject gameManagerObj = GameObject.FindGameObjectWithTag("gamemanager");
+            if (gameManagerObj != null)
+            {
+                GameManager gameManager = gameManagerObj.GetComponent<GameManager>();
+                if (gameManager != null && gameManager.IsInTitleScreenMode())
+                {
+                    // Clear the current trigger tag if we're exiting the one we're currently in
+                    if (currentTriggerTag == other.tag)
+                    {
+                        currentTriggerTag = "";
+                    }
+                    
+                    // Handle trigger-specific behavior (font size resets)
+                    if (other.CompareTag("how2play"))
+                    {
+                        // Get the TextMeshPro component from the trigger object
+                        TextMeshPro textComponent = other.GetComponent<TextMeshPro>();
+                        if (textComponent != null)
+                        {
+                            textComponent.fontSize = 7.64f;
+                        }
+                    }
+                    else if (other.CompareTag("rightArrow") || other.CompareTag("leftArrow"))
+                    {
+                        // Get the TextMeshPro component from the trigger object
+                        TextMeshPro textComponent = other.GetComponent<TextMeshPro>();
+                        if (textComponent != null)
+                        {
+                            textComponent.fontSize = 4.01f;
+                        }
+                    }
+                    else if (other.CompareTag("runGame"))
+                    {
+                        // Get the TextMeshPro component from the trigger object
+                        TextMeshPro textComponent = other.GetComponent<TextMeshPro>();
+                        if (textComponent != null)
+                        {
+                            textComponent.fontSize = 8f;
+                        }
+                    }
+                }
+            }
+        }
     }
 
     public void SetPickingMode()
@@ -547,6 +669,7 @@ public class Cursor : MonoBehaviour
         if (spriteRenderer != null && pickingCursorSprite != null)
         {
             spriteRenderer.sprite = pickingCursorSprite;
+            spriteRenderer.color = Color.white; // Ensure cursor is white in picking mode
         }
         
         // Hide block sprite in picking mode
@@ -565,10 +688,20 @@ public class Cursor : MonoBehaviour
         // Store the block size
         currentBlockSize = blockSize;
         
-        // Switch to building cursor sprite
+        // Switch to building cursor sprite and set building mode color
         if (spriteRenderer != null && buildingCursorSprite != null)
         {
             spriteRenderer.sprite = buildingCursorSprite;
+            
+            // Set cursor color based on player mode
+            if (playerMode == Player.PlayerMode.Player1)
+            {
+                spriteRenderer.color = player1BuildingColor;
+            }
+            else if (playerMode == Player.PlayerMode.Player2)
+            {
+                spriteRenderer.color = player2BuildingColor;
+            }
         }
         
         // Update block sprite to show selected block
@@ -598,5 +731,38 @@ public class Cursor : MonoBehaviour
         
         // Snap to grid when entering building mode
         SnapToGrid();
+    }
+
+    void HandleTutorialInput()
+    {
+        // Only handle tutorial input in title screen mode
+        GameObject gameManagerObj = GameObject.FindGameObjectWithTag("gamemanager");
+        if (gameManagerObj != null)
+        {
+            GameManager gameManager = gameManagerObj.GetComponent<GameManager>();
+            if (gameManager != null && gameManager.IsInTitleScreenMode())
+            {
+                if (currentTriggerTag == "how2play")
+                {
+                    // Show tutorial
+                    gameManager.ShowTutorial();
+                }
+                else if (currentTriggerTag == "rightArrow")
+                {
+                    // Cycle tutorial forward
+                    gameManager.CycleTutorialInstructions(true);
+                }
+                else if (currentTriggerTag == "leftArrow")
+                {
+                    // Cycle tutorial backward
+                    gameManager.CycleTutorialInstructions(false);
+                }
+                else if (currentTriggerTag == "runGame")
+                {
+                    // Start the game
+                    gameManager.OnRunGameSelected();
+                }
+            }
+        }
     }
 }

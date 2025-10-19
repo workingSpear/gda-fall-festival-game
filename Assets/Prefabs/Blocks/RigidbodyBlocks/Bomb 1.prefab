@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4091101085972454381}
-  - component: {fileID: 1762064504320608492}
+  - component: {fileID: 1589914732318004741}
   m_Layer: 0
   m_Name: Select Hitbox
   m_TagString: object
@@ -32,8 +32,8 @@ Transform:
   m_Children: []
   m_Father: {fileID: 6607842522222439462}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!58 &1762064504320608492
-CircleCollider2D:
+--- !u!61 &1589914732318004741
+BoxCollider2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -67,7 +67,17 @@ CircleCollider2D:
   m_CompositeOperation: 0
   m_CompositeOrder: 0
   m_Offset: {x: 0.5, y: 0.5}
-  m_Radius: 0.5
+  m_SpriteTilingProperty:
+    border: {x: 0, y: 0, z: 0, w: 0}
+    pivot: {x: 0, y: 0}
+    oldSize: {x: 0, y: 0}
+    newSize: {x: 0, y: 0}
+    adaptiveTilingThreshold: 0
+    drawMode: 0
+    adaptiveTiling: 0
+  m_AutoTiling: 0
+  m_Size: {x: 1, y: 1}
+  m_EdgeRadius: 0
 --- !u!1 &6389625592315625205
 GameObject:
   m_ObjectHideFlags: 0
@@ -80,7 +90,7 @@ GameObject:
   - component: {fileID: 2364105420633452448}
   - component: {fileID: 2243725353191604153}
   - component: {fileID: 1248543594822602434}
-  - component: {fileID: 761876618360120879}
+  - component: {fileID: 6179131305570294869}
   m_Layer: 8
   m_Name: Bomb 1
   m_TagString: Untagged
@@ -151,7 +161,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 2
-  m_Sprite: {fileID: -2613247888821195678, guid: 3d0c87dc290e34d478d97519e560bd57, type: 3}
+  m_Sprite: {fileID: 3953557322580124010, guid: 0ed9fe0d7ee6ecf47a9dff7d95799a7c, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -177,7 +187,7 @@ MonoBehaviour:
   size: 1
   blockName: BOMB
   blockDescription: Touch to activate. Explodes all blocks touching it temporarily.
-  blockSprite: {fileID: -2613247888821195678, guid: 3d0c87dc290e34d478d97519e560bd57, type: 3}
+  blockSprite: {fileID: 3953557322580124010, guid: 0ed9fe0d7ee6ecf47a9dff7d95799a7c, type: 3}
   blockPrefab: {fileID: 6389625592315625205, guid: 640b2d8840175c940b1f6eb681c84da6, type: 3}
   blockPrefabRigidBody: {fileID: 0}
   tint: {fileID: 0}
@@ -211,8 +221,8 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 0
---- !u!58 &761876618360120879
-CircleCollider2D:
+--- !u!61 &6179131305570294869
+BoxCollider2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -246,4 +256,14 @@ CircleCollider2D:
   m_CompositeOperation: 0
   m_CompositeOrder: 0
   m_Offset: {x: 0.5, y: 0.5}
-  m_Radius: 0.5
+  m_SpriteTilingProperty:
+    border: {x: 0, y: 0, z: 0, w: 0}
+    pivot: {x: 0, y: 0}
+    oldSize: {x: 1, y: 1}
+    newSize: {x: 1, y: 1}
+    adaptiveTilingThreshold: 0.5
+    drawMode: 0
+    adaptiveTiling: 0
+  m_AutoTiling: 0
+  m_Size: {x: 1, y: 1}
+  m_EdgeRadius: 0

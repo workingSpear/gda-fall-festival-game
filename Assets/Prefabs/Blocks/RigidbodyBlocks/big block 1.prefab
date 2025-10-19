@@ -83,7 +83,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 2
-  m_Sprite: {fileID: 3641931977962690872, guid: 42596ab4a39f8b44ba67e0bacd02a658, type: 3}
+  m_Sprite: {fileID: 7953115609395313093, guid: 88672cfcddee7e64b8c89ceaf5bf123f, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -155,7 +155,7 @@ MonoBehaviour:
   size: 4
   blockName: CUBE
   blockDescription: On a diet. Used for platforming.
-  blockSprite: {fileID: 3641931977962690872, guid: 42596ab4a39f8b44ba67e0bacd02a658, type: 3}
+  blockSprite: {fileID: 7953115609395313093, guid: 88672cfcddee7e64b8c89ceaf5bf123f, type: 3}
   blockPrefab: {fileID: 3897939434625992821, guid: b50dbc0f287bbf34b9dc44e43bb3ce98, type: 3}
   blockPrefabRigidBody: {fileID: 0}
   tint: {fileID: 0}

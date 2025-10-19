@@ -19,6 +19,10 @@ TagManager:
   - fan
   - fanMod
   - fanBackButton
+  - how2play
+  - rightArrow
+  - leftArrow
+  - runGame
   layers:
   - Default
   - TransparentFX

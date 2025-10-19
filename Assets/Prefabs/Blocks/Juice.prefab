@@ -82,7 +82,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 2
-  m_Sprite: {fileID: 5395790406679637091, guid: 6fad799d38d129748a10216a64b1a8a0, type: 3}
+  m_Sprite: {fileID: 2791105872119289076, guid: 22b36257161f2824f881bef6b7317841, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -130,8 +130,8 @@ BoxCollider2D:
   m_Offset: {x: 0.5, y: 0.5}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
-    pivot: {x: 0, y: 0}
-    oldSize: {x: 1, y: 1}
+    pivot: {x: 0.5, y: 0.5}
+    oldSize: {x: 0.27, y: 0.32}
     newSize: {x: 1, y: 1}
     adaptiveTilingThreshold: 0.5
     drawMode: 0
@@ -154,7 +154,7 @@ MonoBehaviour:
   size: 1
   blockName: DRINK
   blockDescription: drinkable. you no longer collide with clones on drink.
-  blockSprite: {fileID: 5395790406679637091, guid: 6fad799d38d129748a10216a64b1a8a0, type: 3}
+  blockSprite: {fileID: 2791105872119289076, guid: 22b36257161f2824f881bef6b7317841, type: 3}
   blockPrefab: {fileID: 907202582347058908}
   blockPrefabRigidBody: {fileID: 907202582347058908, guid: 5ae72d04ad439954ea72e92063925cab, type: 3}
   tint: {fileID: 0}

@@ -83,7 +83,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 2
-  m_Sprite: {fileID: 21300000, guid: 52fc6443ac4ff5e4f85ec14c51a6eb59, type: 3}
+  m_Sprite: {fileID: -2843062148381276162, guid: f9e51020c8bb916488a1587300b10f83, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -155,7 +155,7 @@ MonoBehaviour:
   size: 1
   blockName: COCK
   blockDescription: drinkable. you and your clones become tiny and nimble.
-  blockSprite: {fileID: 21300000, guid: 52fc6443ac4ff5e4f85ec14c51a6eb59, type: 3}
+  blockSprite: {fileID: -2843062148381276162, guid: f9e51020c8bb916488a1587300b10f83, type: 3}
   blockPrefab: {fileID: 519389248785222886, guid: 97e775a0bad7d294cae721ca299a14fe, type: 3}
   blockPrefabRigidBody: {fileID: 519389248785222886}
   tint: {fileID: 0}

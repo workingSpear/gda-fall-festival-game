@@ -45,6 +45,9 @@ public class Player : MonoBehaviour
     [Tooltip("Prefab to spawn for Player 2 on death")]
     public GameObject player2DeathPrefab;
 
+    [Header("Animation")]
+    public Animator animator;
+    
     [Header("Collider References")]
     public BoxCollider2D jumpableHead;
 
@@ -55,6 +58,8 @@ public class Player : MonoBehaviour
     public bool hasBeenHitStopped = false;
     [HideInInspector]
     public bool hasInvertedControls = false;
+    [HideInInspector]
+    public bool hasTriggeredRapChangeThisRound = false;
     private bool wasGrounded;
     private float moveInput;
     private float jumpBufferCounter;
@@ -72,6 +77,12 @@ public class Player : MonoBehaviour
     {
         rb = GetComponent<Rigidbody2D>();
         spriteRenderer = GetComponent<SpriteRenderer>();
+        
+        // Get animator if not assigned
+        if (animator == null)
+        {
+            animator = GetComponent<Animator>();
+        }
         rb.gravityScale = normalGravityScale;
         lastJumpTime = -jumpCooldown; // Allow jumping immediately at start
         
@@ -114,6 +125,19 @@ public class Player : MonoBehaviour
 
         // Get input based on player mode
         HandleInput();
+        
+        // Update animator parameters
+        if (animator != null)
+        {
+            animator.SetBool("isRunning", Mathf.Abs(moveInput) > 0.1f);
+            animator.SetBool("isGrounded", isGrounded);
+        }
+        
+        // Flip sprite based on movement direction
+        if (spriteRenderer != null && Mathf.Abs(moveInput) > 0.1f)
+        {
+            spriteRenderer.flipX = -moveInput < 0;
+        }
     }
 
     void FixedUpdate()
@@ -275,6 +299,12 @@ public class Player : MonoBehaviour
             // Mark that this player has been hitstopped
             hasBeenHitStopped = true;
             
+            // Flip sprite when dying
+            if (spriteRenderer != null)
+            {
+                spriteRenderer.flipX = !spriteRenderer.flipX;
+            }
+            
             // Get the appropriate death prefab based on player mode
             GameObject deathPrefab = playerMode == PlayerMode.Player1 ? player1DeathPrefab : player2DeathPrefab;
             
@@ -284,11 +314,23 @@ public class Player : MonoBehaviour
                 hitstopManager.TriggerHitstop(this, deathPrefab, false);
             }
             
+            // Trigger death animation
+            if (animator != null)
+            {
+                animator.SetTrigger("dead");
+            }
+            
             // Notify GameManager of player death
             GameManager gameManager = GameObject.FindGameObjectWithTag("gamemanager")?.GetComponent<GameManager>();
             if (gameManager != null)
             {
                 gameManager.OnPlayerDeath(playerMode, true, false); // true = real death, false = not from clone
+                
+                // Play dead sound when player dies
+                if (gameManager.audioManager != null)
+                {
+                    gameManager.audioManager.PlayDeadClip();
+                }
             }
         }
         else if (other.CompareTag("portal"))
@@ -364,11 +406,23 @@ public class Player : MonoBehaviour
             // Mark that this player has been hitstopped
             hasBeenHitStopped = true;
             
+            // Tint player black when reaching the end
+            if (spriteRenderer != null)
+            {
+                spriteRenderer.color = Color.black;
+            }
+            
             // Award point to this player's team
             GameManager gameManager = GameObject.FindGameObjectWithTag("gamemanager")?.GetComponent<GameManager>();
             if (gameManager != null)
             {
                 gameManager.AwardPoint(playerMode);
+                
+                // Play made it sound when player reaches the end
+                if (gameManager.audioManager != null)
+                {
+                    gameManager.audioManager.PlayMadeItClip();
+                }
             }
             
             // Get the appropriate death prefab based on player mode (though won't be used for end)

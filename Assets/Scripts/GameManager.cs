@@ -93,6 +93,24 @@ public class GameManager : MonoBehaviour
     [Tooltip("Duration to show StaticNoise between rounds")]
     public float staticNoiseDuration = 2f;
     
+    [Header("Title Screen Mode")]
+    [Tooltip("Physical Map GameObject that should be disabled until StartGame is called")]
+    public GameObject physicalMap;
+    [Tooltip("Tutorial GameObject that contains the tutorial instructions")]
+    public GameObject tutorial;
+    [Tooltip("Array of TextMeshPro objects that contain the tutorial instructions")]
+    public TextMeshPro[] tutorialInstructions;
+    [Tooltip("Actual Title Screen GameObject that should be disabled when tutorial is shown")]
+    public GameObject actualTitleScreen;
+    [Tooltip("Left Arrow GameObject for tutorial navigation")]
+    public GameObject leftArrow;
+    [Tooltip("Right Arrow GameObject for tutorial navigation")]
+    public GameObject rightArrow;
+    [Tooltip("TextMeshPro object that shows tutorial progression with rich text")]
+    public TextMeshPro tutorialProgressionText;
+    [Tooltip("TextMeshPro object for RunGame button that starts the game")]
+    public TextMeshPro runGameText;
+    
     [Header("Player Spawn Effects")]
     [Tooltip("Particle system prefab for Player 1 spawn")]
     public GameObject player1SpawnParticlePrefab;
@@ -123,6 +141,7 @@ public class GameManager : MonoBehaviour
 
     private int roundCounter = 0;
     private bool isResetting = false;
+    private bool isTitleScreenMode = true; // Start in title screen mode
     private bool isPickingMode = false;
     private bool isBuildingMode = false;
     private bool isWinMode = false;
@@ -146,6 +165,9 @@ public class GameManager : MonoBehaviour
     private bool hasTimedOut = false;
     private bool isTransitioning = false;
     
+    // Tutorial state
+    private int currentTutorialInstructionIndex = 0;
+    
     // Disabled blocks tracking
     private System.Collections.Generic.List<Block> disabledBlocks = new System.Collections.Generic.List<Block>();
     
@@ -167,6 +189,24 @@ public class GameManager : MonoBehaviour
     {
         Application.targetFrameRate = 144;
         
+        // Initialize Title Screen Mode
+        InitializeTitleScreenMode();
+    }
+
+    void InitializeTitleScreenMode()
+    {
+        // Set title screen mode
+        isTitleScreenMode = true;
+        isPickingMode = false;
+        isBuildingMode = false;
+        isWinMode = false;
+        
+        // Disable physical map until StartGame is called
+        if (physicalMap != null)
+        {
+            physicalMap.SetActive(false);
+        }
+        
         // Reset used drinks for new game
         usedDrinks.Clear();
         
@@ -180,7 +220,7 @@ public class GameManager : MonoBehaviour
             cloneRecorder.player2SpawnPoint = player2SpawnPoint;
         }
         
-        // Round 0: Reset players to spawn positions but keep disabled
+        // Reset players to spawn positions but keep disabled
         if (player1 != null)
         {
             if (player1SpawnPoint != null)
@@ -211,12 +251,313 @@ public class GameManager : MonoBehaviour
             StaticNoise.SetActive(false);
         }
         
+        // Disable player 2 cursor, enable only player 1 cursor
+        if (player1Cursor != null)
+        {
+            player1Cursor.EnableCursor(true);
+            player1Cursor.SetPickingMode();
+        }
+        
+        if (player2Cursor != null)
+        {
+            player2Cursor.DisableCursor();
+        }
+        
+        // Hide all UI elements that should not be visible in title screen
+        if (pickingModeUI != null)
+        {
+            pickingModeUI.SetActive(false);
+        }
+        
+        if (buildingModeUI != null)
+        {
+            buildingModeUI.SetActive(false);
+        }
+        
+        // Hide tutorial initially and show actual title screen
+        if (tutorial != null)
+        {
+            tutorial.SetActive(false);
+        }
+        
+        if (actualTitleScreen != null)
+        {
+            actualTitleScreen.SetActive(true);
+        }
+        
+        // Hide tutorial arrows initially (they'll be shown when tutorial is active)
+        if (leftArrow != null)
+        {
+            leftArrow.SetActive(false);
+        }
+        
+        if (rightArrow != null)
+        {
+            rightArrow.SetActive(false);
+        }
+        
+        // Reset tutorial instruction index
+        currentTutorialInstructionIndex = 0;
+        
+        // Initialize RunGame button based on tutorial completion status
+        UpdateRunGameButton();
+    }
+
+    public void StartGame()
+    {
+        // Start the game transition
+        StartCoroutine(StartGameTransition());
+    }
+    
+    IEnumerator StartGameTransition()
+    {
+        // Hide the actual title screen
+        if (actualTitleScreen != null)
+        {
+            actualTitleScreen.SetActive(false);
+        }
+        
+        // Show static transition
+        if (StaticNoise != null)
+        {
+            StaticNoise.SetActive(true);
+        }
+        
+        // Wait for static transition duration
+        yield return new WaitForSeconds(staticNoiseDuration);
+        
+        // Hide static noise
+        if (StaticNoise != null)
+        {
+            StaticNoise.SetActive(false);
+        }
+        
+        // Exit title screen mode and start the actual game
+        isTitleScreenMode = false;
+        
+        // Enable the physical map
+        if (physicalMap != null)
+        {
+            physicalMap.SetActive(true);
+        }
+        
+        // Disable both cursors initially - they'll be enabled when needed
+        if (player1Cursor != null)
+        {
+            player1Cursor.DisableCursor();
+        }
+        
+        if (player2Cursor != null)
+        {
+            player2Cursor.DisableCursor();
+        }
+        
         // Start the spawn sequence with staggering for round 0
         StartCoroutine(InitialPlayerSpawn());
     }
 
+    public void ShowTutorial()
+    {
+        // Only show tutorial in title screen mode
+        if (!isTitleScreenMode || tutorial == null)
+            return;
+            
+        // Show the tutorial GameObject
+        tutorial.SetActive(true);
+        
+        // Disable the actual title screen
+        if (actualTitleScreen != null)
+        {
+            actualTitleScreen.SetActive(false);
+        }
+        
+        // Reset to first instruction and update display
+        currentTutorialInstructionIndex = 0;
+        UpdateTutorialDisplay();
+    }
+
+    public void CycleTutorialInstructions(bool forward)
+    {
+        // Only cycle if tutorial is active and in title screen mode
+        if (!isTitleScreenMode || tutorial == null || !tutorial.activeInHierarchy || tutorialInstructions == null || tutorialInstructions.Length == 0)
+            return;
+            
+        // Check if we're trying to go forward from the last instruction
+        if (forward && currentTutorialInstructionIndex >= tutorialInstructions.Length - 1)
+        {
+            // Close tutorial and return to title screen (tutorial completed)
+            CloseTutorial(true);
+            return;
+        }
+            
+        // Cycle through instructions
+        if (forward)
+        {
+            currentTutorialInstructionIndex = (currentTutorialInstructionIndex + 1) % tutorialInstructions.Length;
+        }
+        else
+        {
+            currentTutorialInstructionIndex = (currentTutorialInstructionIndex - 1 + tutorialInstructions.Length) % tutorialInstructions.Length;
+        }
+        
+        UpdateTutorialDisplay();
+    }
+
+    void UpdateTutorialDisplay()
+    {
+        if (tutorialInstructions == null || tutorialInstructions.Length == 0)
+            return;
+            
+        // Hide all instructions first
+        for (int i = 0; i < tutorialInstructions.Length; i++)
+        {
+            if (tutorialInstructions[i] != null)
+            {
+                tutorialInstructions[i].gameObject.SetActive(false);
+            }
+        }
+        
+        // Show the current instruction
+        if (currentTutorialInstructionIndex >= 0 && currentTutorialInstructionIndex < tutorialInstructions.Length && tutorialInstructions[currentTutorialInstructionIndex] != null)
+        {
+            tutorialInstructions[currentTutorialInstructionIndex].gameObject.SetActive(true);
+        }
+        
+        // Update arrow visibility
+        // Show left arrow if not on first instruction
+        if (leftArrow != null)
+        {
+            leftArrow.SetActive(currentTutorialInstructionIndex > 0);
+        }
+        
+        // Always show right arrow (it will close tutorial when on last instruction instead of being hidden)
+        if (rightArrow != null)
+        {
+            rightArrow.SetActive(true);
+        }
+        
+        // Update tutorial progression text
+        UpdateTutorialProgressionText();
+    }
+
+    void UpdateTutorialProgressionText()
+    {
+        if (tutorialProgressionText == null)
+            return;
+            
+        // Define the tutorial progression steps
+        string[] progressionSteps = { "INTRO", "RUN", "PICK", "BUILD", "AGAIN!" };
+        
+        // Build the progression text with rich text alpha tags
+        string progressionText = "";
+        bool needsAlphaReset = false;
+        
+        for (int i = 0; i < progressionSteps.Length; i++)
+        {
+            // If we're at the current instruction or past it, show full opacity
+            // If we're after the current instruction, show with reduced opacity
+            if (i <= currentTutorialInstructionIndex)
+            {
+                progressionText += progressionSteps[i];
+            }
+            else
+            {
+                // Start dimmed mode if not already active
+                if (!needsAlphaReset)
+                {
+                    progressionText += "<alpha=#10>";
+                    needsAlphaReset = true;
+                }
+                progressionText += progressionSteps[i];
+            }
+            
+            // Add arrow separator except for the last item
+            if (i < progressionSteps.Length - 1)
+            {
+                progressionText += " -> ";
+            }
+        }
+        
+        tutorialProgressionText.text = progressionText;
+    }
+
+    void CloseTutorial(bool tutorialCompleted = false)
+    {
+        // Hide the tutorial
+        if (tutorial != null)
+        {
+            tutorial.SetActive(false);
+        }
+        
+        // Show the actual title screen
+        if (actualTitleScreen != null)
+        {
+            actualTitleScreen.SetActive(true);
+        }
+        
+        // Save to PlayerPrefs if tutorial was completed
+        if (tutorialCompleted)
+        {
+            PlayerPrefs.SetInt("TutorialCompleted", 1);
+            PlayerPrefs.Save();
+            
+            // Update RunGame button since tutorial is now completed
+            UpdateRunGameButton();
+        }
+        
+        // Reset tutorial index for next time
+        currentTutorialInstructionIndex = 0;
+    }
+
+    void UpdateRunGameButton()
+    {
+        if (runGameText == null)
+            return;
+            
+        // Check if tutorial has been completed
+        bool tutorialCompleted = PlayerPrefs.GetInt("TutorialCompleted", 0) == 1;
+        
+        if (tutorialCompleted)
+        {
+            // Set full opacity
+            Color textColor = runGameText.color;
+            textColor.a = 1.0f;
+            runGameText.color = textColor;
+            
+            // Enable BoxCollider2D
+            BoxCollider2D boxCollider = runGameText.GetComponent<BoxCollider2D>();
+            if (boxCollider != null)
+            {
+                boxCollider.enabled = true;
+            }
+        }
+        else
+        {
+            // Set reduced opacity
+            Color textColor = runGameText.color;
+            textColor.a = 0.5f; // You can adjust this value as needed
+            runGameText.color = textColor;
+            
+            // Disable BoxCollider2D
+            BoxCollider2D boxCollider = runGameText.GetComponent<BoxCollider2D>();
+            if (boxCollider != null)
+            {
+                boxCollider.enabled = false;
+            }
+        }
+    }
+
+    public void OnRunGameSelected()
+    {
+        // Call StartGame when RunGame is selected
+        StartGame();
+    }
+
     IEnumerator InitialPlayerSpawn()
     {
+        // Reset rapChange trigger state before entering platforming mode
+        ResetRapChangeTriggerState();
+        
         // Spawn Player 1 first
         if (player1 != null)
         {
@@ -271,6 +612,12 @@ public class GameManager : MonoBehaviour
 
     void Update()
     {
+        // Don't run any game logic if in title screen mode
+        if (isTitleScreenMode)
+        {
+            return;
+        }
+        
         // Update occupied positions display
         UpdateOccupiedPositions();
         
@@ -452,6 +799,9 @@ public class GameManager : MonoBehaviour
                 yield return new WaitForSeconds(cloneSpawnDelay);
             }
         }
+        
+        // Reset rapChange trigger state before entering platforming mode
+        ResetRapChangeTriggerState();
         
         // Finally, spawn the players with their own delay (don't wait for clones to finish)
         if (player1 != null)
@@ -1009,6 +1359,11 @@ public class GameManager : MonoBehaviour
         return isPickingMode;
     }
     
+    public bool IsInTitleScreenMode()
+    {
+        return isTitleScreenMode;
+    }
+    
     // Weighted loot table selection for picking mode
     GameObject SelectWeightedObject(System.Collections.Generic.List<int> availableIndices)
     {
@@ -1156,6 +1511,9 @@ public class GameManager : MonoBehaviour
         // Reset all drink effects when entering picking mode
         ResetDrinkEffects();
         
+        // Reset rapChange flags for all entities to allow triggering again this round
+        ResetRapChangeFlags();
+        
         // Stop the timer during picking mode
         isTimerRunning = false;
         UpdateTimerDisplay();
@@ -1182,6 +1540,9 @@ public class GameManager : MonoBehaviour
         
         // Randomly select objects to display
         SelectRandomObjects();
+        
+        // Trigger rapChange on all players and clones
+        TriggerRapChangeOnAllEntities();
         
         // Disable all players and clones
         if (player1 != null)
@@ -1231,6 +1592,112 @@ public class GameManager : MonoBehaviour
         {
             player2Cursor.EnableCursor(true);
             player2Cursor.SetPickingMode();
+        }
+    }
+
+    void TriggerRapChangeOnAllEntities()
+    {
+        // Trigger rapChange on both players (only if not already triggered this round)
+        if (player1 != null && player1.animator != null && !player1.hasTriggeredRapChangeThisRound)
+        {
+            player1.animator.SetTrigger("rapChange");
+            player1.hasTriggeredRapChangeThisRound = true;
+        }
+        
+        if (player2 != null && player2.animator != null && !player2.hasTriggeredRapChangeThisRound)
+        {
+            player2.animator.SetTrigger("rapChange");
+            player2.hasTriggeredRapChangeThisRound = true;
+        }
+        
+        // Trigger rapChange on all clones (only if not already triggered this round)
+        if (cloneRecorder != null)
+        {
+            foreach (Clone clone in cloneRecorder.player1Clones)
+            {
+                if (clone != null && clone.animator != null && !clone.hasTriggeredRapChangeThisRound)
+                {
+                    clone.animator.SetTrigger("rapChange");
+                    clone.hasTriggeredRapChangeThisRound = true;
+                }
+            }
+            
+            foreach (Clone clone in cloneRecorder.player2Clones)
+            {
+                if (clone != null && clone.animator != null && !clone.hasTriggeredRapChangeThisRound)
+                {
+                    clone.animator.SetTrigger("rapChange");
+                    clone.hasTriggeredRapChangeThisRound = true;
+                }
+            }
+        }
+    }
+
+    void ResetRapChangeFlags()
+    {
+        // Reset rapChange flags for both players
+        if (player1 != null)
+        {
+            player1.hasTriggeredRapChangeThisRound = false;
+        }
+        
+        if (player2 != null)
+        {
+            player2.hasTriggeredRapChangeThisRound = false;
+        }
+        
+        // Reset rapChange flags for all clones
+        if (cloneRecorder != null)
+        {
+            foreach (Clone clone in cloneRecorder.player1Clones)
+            {
+                if (clone != null)
+                {
+                    clone.hasTriggeredRapChangeThisRound = false;
+                }
+            }
+            
+            foreach (Clone clone in cloneRecorder.player2Clones)
+            {
+                if (clone != null)
+                {
+                    clone.hasTriggeredRapChangeThisRound = false;
+                }
+            }
+        }
+    }
+
+    void ResetRapChangeTriggerState()
+    {
+        // Reset rapChange trigger state for both players
+        if (player1 != null && player1.animator != null)
+        {
+            player1.animator.ResetTrigger("rapChange");
+        }
+        
+        if (player2 != null && player2.animator != null)
+        {
+            player2.animator.ResetTrigger("rapChange");
+        }
+        
+        // Reset rapChange trigger state for all clones
+        if (cloneRecorder != null)
+        {
+            foreach (Clone clone in cloneRecorder.player1Clones)
+            {
+                if (clone != null && clone.animator != null)
+                {
+                    clone.animator.ResetTrigger("rapChange");
+                }
+            }
+            
+            foreach (Clone clone in cloneRecorder.player2Clones)
+            {
+                if (clone != null && clone.animator != null)
+                {
+                    clone.animator.ResetTrigger("rapChange");
+                }
+            }
         }
     }
 
@@ -1563,6 +2030,12 @@ public class GameManager : MonoBehaviour
             player2SelectedBlock = blockPrefab;
         }
         
+        // Play pickup sound when object is successfully selected
+        if (audioManager != null)
+        {
+            audioManager.PlayPickupClip();
+        }
+        
         // Destroy the selected object
         Destroy(rootObject);
         spawnedPickableObjects.Remove(rootObject);
@@ -1659,6 +2132,12 @@ public class GameManager : MonoBehaviour
 
             // Spawn the block prefab at that position
         GameObject placedBlock = Instantiate(blockToPlace, blockPosition, Quaternion.identity);
+        
+        // Play place sound when block is successfully placed
+        if (audioManager != null)
+        {
+            audioManager.PlayPlaceClip();
+        }
         
         // Set the parent to Object Transform Mommy
         if (objectTransformMommy != null)

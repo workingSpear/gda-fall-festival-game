@@ -40,9 +40,9 @@ public class HitstopManager : MonoBehaviour
     [Tooltip("Array of SpriteRenderers to cycle through after each hitstop")]
     public SpriteRenderer[] cyclingSprites;
     [Tooltip("Color to tint sprites when Player 1 triggers hitstop")]
-    public Color player1TintColor = Color.red;
+    public Color player1TintColor;
     [Tooltip("Color to tint sprites when Player 2 triggers hitstop")]
-    public Color player2TintColor = Color.blue;
+    public Color player2TintColor;
 
     private int activeHitstops = 0; // Track how many hitstops are active
     private List<EffectInfo> pendingEffects = new List<EffectInfo>();
@@ -117,8 +117,7 @@ public class HitstopManager : MonoBehaviour
             originalColor = spriteRenderer.color;
             originalSortingOrder = spriteRenderer.sortingOrder;
             
-            // Set sprite to black and change sorting order
-            spriteRenderer.color = Color.black;
+            // Change sorting order only (don't tint player black)
             spriteRenderer.sortingOrder = 50;
         }
         
@@ -141,7 +140,7 @@ public class HitstopManager : MonoBehaviour
             }
             else
             {
-                hitStopColor = player.playerMode == Player.PlayerMode.Player1 ? Color.red : Color.blue;
+                hitStopColor = player.playerMode == Player.PlayerMode.Player1 ? player1TintColor : player2TintColor;
             }
             
             // Make player death more obvious with higher opacity and pulsing effect
@@ -272,8 +271,11 @@ public class HitstopManager : MonoBehaviour
             originalColor = spriteRenderer.color;
             originalSortingOrder = spriteRenderer.sortingOrder;
             
-            // Set sprite to black and change sorting order
-            spriteRenderer.color = Color.black;
+            // Only set sprite to black for end triggers, not hazard deaths
+            if (isEnd)
+            {
+                spriteRenderer.color = Color.black;
+            }
             spriteRenderer.sortingOrder = 50;
         }
         
@@ -296,7 +298,7 @@ public class HitstopManager : MonoBehaviour
             }
             else
             {
-                hitStopColor = clone.playerMode == Player.PlayerMode.Player1 ? Color.red : Color.blue;
+                hitStopColor = clone.playerMode == Player.PlayerMode.Player1 ? player1TintColor : player2TintColor;
             }
             
             hitStopColor.a = 33f / 255f; // Set opacity to 33/255

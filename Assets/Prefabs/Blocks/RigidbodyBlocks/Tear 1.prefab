@@ -81,6 +81,7 @@ GameObject:
   - component: {fileID: 6569553039703952020}
   - component: {fileID: 5059663246724519617}
   - component: {fileID: 8296881977423239978}
+  - component: {fileID: 7366762403000576196}
   m_Layer: 8
   m_Name: Tear 1
   m_TagString: Untagged
@@ -151,7 +152,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 2
-  m_Sprite: {fileID: 8409234884740282508, guid: bf6feb9d9db1eae45af3e298d5c728c5, type: 3}
+  m_Sprite: {fileID: -2305958526138685017, guid: 45263c0b4742eec4486d1a4b765ff6c8, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -177,7 +178,7 @@ MonoBehaviour:
   size: 1
   blockName: TEAR
   blockDescription: Link 2 together to get a pathway.
-  blockSprite: {fileID: 8409234884740282508, guid: bf6feb9d9db1eae45af3e298d5c728c5, type: 3}
+  blockSprite: {fileID: -2305958526138685017, guid: 45263c0b4742eec4486d1a4b765ff6c8, type: 3}
   blockPrefab: {fileID: 6713886750282550536, guid: c1f620c3cb15e82498454085abc0c106, type: 3}
   blockPrefabRigidBody: {fileID: 6713886750282550536}
   tint: {fileID: 0}
@@ -247,3 +248,25 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 0
+--- !u!95 &7366762403000576196
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6713886750282550536}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 01fe223b743900843995bd0fa500f047, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0

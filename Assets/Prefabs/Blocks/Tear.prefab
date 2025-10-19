@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 6170903710573522601}
   - component: {fileID: 6569553039703952020}
   - component: {fileID: 1038348124514875868}
+  - component: {fileID: 2086343179610831138}
   m_Layer: 0
   m_Name: Tear
   m_TagString: portal
@@ -82,7 +83,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 2
-  m_Sprite: {fileID: 8409234884740282508, guid: bf6feb9d9db1eae45af3e298d5c728c5, type: 3}
+  m_Sprite: {fileID: -2305958526138685017, guid: 45263c0b4742eec4486d1a4b765ff6c8, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -154,7 +155,7 @@ MonoBehaviour:
   size: 1
   blockName: TEAR
   blockDescription: Link 2 together to get a pathway.
-  blockSprite: {fileID: 8409234884740282508, guid: bf6feb9d9db1eae45af3e298d5c728c5, type: 3}
+  blockSprite: {fileID: -2305958526138685017, guid: 45263c0b4742eec4486d1a4b765ff6c8, type: 3}
   blockPrefab: {fileID: 0}
   blockPrefabRigidBody: {fileID: 6713886750282550536, guid: 978b261e437a9534680bbb076a1b7e95, type: 3}
   tint: {fileID: 0}
@@ -178,3 +179,25 @@ MonoBehaviour:
   teleportCooldown: 3
   cooldownOpacity: 0.3
   unlinkedOpacity: 0.5
+--- !u!95 &2086343179610831138
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6713886750282550536}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 473b1aa7976730e4e9def0cbb789d00a, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0

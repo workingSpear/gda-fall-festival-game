@@ -207,8 +207,8 @@ public class Turret : Block
         // Calculate direction to target
         Vector2 direction = (targetPosition - transform.position).normalized;
         
-        // Calculate angle in degrees (add 180 to correct offset)
-        float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg + 180f;
+        // Calculate angle in degrees
+        float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg + 270f;
         
         // Apply rotation to turret
         transform.rotation = Quaternion.Euler(0f, 0f, angle);
@@ -285,7 +285,7 @@ public class Turret : Block
         }
         
         // Optionally rotate the projectile to face the direction it's moving
-        float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg + 180f;
+        float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg + 270f;
         projectile.transform.rotation = Quaternion.Euler(0f, 0f, angle);
     }
     

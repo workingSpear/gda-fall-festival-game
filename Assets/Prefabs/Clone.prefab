@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 6896600259202330166}
   - component: {fileID: 3322098961998931059}
   - component: {fileID: -8423262722698207609}
+  - component: {fileID: 8979836225881745501}
   m_Layer: 6
   m_Name: Clone
   m_TagString: clone
@@ -30,7 +31,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -1.27, y: 0.592, z: 0}
-  m_LocalScale: {x: 0.4, y: 0.4, z: 1}
+  m_LocalScale: {x: 0.5, y: 0.5, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 3700673041531831522}
@@ -84,7 +85,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 10
-  m_Sprite: {fileID: 4662155779723574306, guid: 1b1391c8d800b824d8e778aa27c381e4, type: 3}
+  m_Sprite: {fileID: 2975838097735242813, guid: b1d86b4aec3ab884196f514eef5f936a, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -180,7 +181,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3bf36a888e2f98e428c58e05d895de17, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Clone
-  recordedInputs: []
+  recordedVelocities: []
   startPosition: {x: 0, y: 0}
   framesBeforeNextVelocity: 0
   playbackSpeed: 1
@@ -189,26 +190,34 @@ MonoBehaviour:
   playerMode: 0
   player1DeathPrefab: {fileID: 4457446509966006283, guid: c95b943e24187c3499f90cb61c3f5a31, type: 3}
   player2DeathPrefab: {fileID: 1836713445987593280, guid: cd3ff528571c2704eaab08a16dcd4338, type: 3}
+  animator: {fileID: 8979836225881745501}
   jumpableHead: {fileID: 2423208706425411161}
-  moveSpeed: 7.5
-  jumpForce: 11.5
-  normalGravityScale: 4
-  peakGravityScale: 8
-  hangtimeGravityScale: 2.5
-  hangtimeThreshold: 2
-  jumpBufferTime: 0.1
-  coyoteTime: 0.1
-  jumpCooldown: 0.2
-  jumpCutVelocity: 6
-  groundCheck: {fileID: 186696392595877224}
-  groundCheckRadius: 0.25
-  groundLayer:
-    serializedVersion: 2
-    m_Bits: 0
   spriteRenderer: {fileID: 8160529691683580892}
   hasBeenHitStopped: 0
   hasInvertedControls: 0
   hitstopManager: {fileID: 0}
+--- !u!95 &8979836225881745501
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2055729744138955338}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 82e1ba05694def6479fae0b5fc716dd8, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &2538035184702899097
 GameObject:
   m_ObjectHideFlags: 0

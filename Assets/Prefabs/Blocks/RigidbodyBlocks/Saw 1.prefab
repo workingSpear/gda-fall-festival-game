@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 5712354923997013335}
   - component: {fileID: 5051107935326993549}
   - component: {fileID: -4304855579423967521}
+  - component: {fileID: -6375191975350667005}
   m_Layer: 8
   m_Name: Saw 1
   m_TagString: hazard
@@ -83,7 +84,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 2
-  m_Sprite: {fileID: -2850130919828143354, guid: 9682fa7464c809b42b5cc4222ef6b85a, type: 3}
+  m_Sprite: {fileID: 6046155753917115144, guid: 5df45cdf84828af428509fbfd7edfd06, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -109,7 +110,7 @@ MonoBehaviour:
   size: 1
   blockName: SAW
   blockDescription: Kills upon contact. Good idea to lick.
-  blockSprite: {fileID: -2850130919828143354, guid: 9682fa7464c809b42b5cc4222ef6b85a, type: 3}
+  blockSprite: {fileID: 6046155753917115144, guid: 5df45cdf84828af428509fbfd7edfd06, type: 3}
   blockPrefab: {fileID: 2268168810339546747, guid: fc9e3693b12c7994c852e9db778a7aad, type: 3}
   blockPrefabRigidBody: {fileID: 2268168810339546747}
   tint: {fileID: 0}
@@ -179,6 +180,28 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 0
+--- !u!95 &-6375191975350667005
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2268168810339546747}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 9035fd2d2d0cfd641b018bc341b7fc8a, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &3112565117927841754
 GameObject:
   m_ObjectHideFlags: 0
