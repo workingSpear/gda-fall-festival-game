@@ -3072,7 +3072,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &167356582
 Transform:
   m_ObjectHideFlags: 0
@@ -6783,7 +6783,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &381771450
 RectTransform:
   m_ObjectHideFlags: 0
@@ -7759,6 +7759,7 @@ GameObject:
   m_Component:
   - component: {fileID: 420770913}
   - component: {fileID: 420770914}
+  - component: {fileID: 420770915}
   m_Layer: 0
   m_Name: DemonstrationVideo
   m_TagString: Untagged
@@ -7776,7 +7777,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0.44, z: 0}
-  m_LocalScale: {x: 3.9, y: 2.1937501, z: 0.24375}
+  m_LocalScale: {x: 1.06, y: 1.024469, z: 0.06625}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 167356582}
@@ -7827,8 +7828,8 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 2
-  m_Sprite: {fileID: 7482667652216324306, guid: 311925a002f4447b3a28927169b83ea6, type: 3}
+  m_SortingOrder: 3
+  m_Sprite: {fileID: -3464802627139622455, guid: b375c33bc0b3aaa4e845e8d374cd325b, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -7839,6 +7840,28 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!95 &420770915
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 420770912}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 2ed89433df593394bb5076ce8badbfca, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &441501290
 GameObject:
   m_ObjectHideFlags: 0
@@ -8652,7 +8675,7 @@ MonoBehaviour:
   isMakingSelection: 0
   player1SelectedBlock: {fileID: 0}
   player2SelectedBlock: {fileID: 0}
-  player1Points: 0
+  player1Points: 14
   player2Points: 0
 --- !u!114 &486515032
 MonoBehaviour:
@@ -13082,7 +13105,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &701026604
 Transform:
   m_ObjectHideFlags: 0
@@ -15141,7 +15164,13 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_text: 'After both players make it to the end (or worse), items will fall from
-    the sky
+    the sky.
+
+
+    Player 1 uses Q to pick up items.
+
+    Player 2 uses O to pick
+    up items.
 
 
     Read their descriptions wisely...it may be to your great benefit.'
@@ -28202,7 +28231,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1833256655
 RectTransform:
   m_ObjectHideFlags: 0
@@ -28292,9 +28321,9 @@ MonoBehaviour:
 
 
     Player
-    1 uses W/A/S/D
+    1 (TOP) uses W/A/S/D
 
-    Player 2 uses I/J/K/L'
+    Player 2 (BOTTOM) uses I/J/K/L'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 99abd0db28ad6eb4d9c831a1f03116ab, type: 2}
   m_sharedMaterial: {fileID: 5452190310903107242, guid: 99abd0db28ad6eb4d9c831a1f03116ab, type: 2}

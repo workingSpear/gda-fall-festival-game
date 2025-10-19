@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using TMPro;
 using System.Collections;
 
@@ -110,6 +111,8 @@ public class GameManager : MonoBehaviour
     public TextMeshPro tutorialProgressionText;
     [Tooltip("TextMeshPro object for RunGame button that starts the game")]
     public TextMeshPro runGameText;
+    [Tooltip("Animator component for tutorial animations")]
+    public Animator tutorialAnimator;
     
     [Header("Player Spawn Effects")]
     [Tooltip("Particle system prefab for Player 1 spawn")]
@@ -438,6 +441,12 @@ public class GameManager : MonoBehaviour
         
         // Update tutorial progression text
         UpdateTutorialProgressionText();
+        
+        // Set the animator integer to the current tutorial instruction index
+        if (tutorialAnimator != null)
+        {
+            tutorialAnimator.SetInteger("tutorialIndex", currentTutorialInstructionIndex);
+        }
     }
 
     void UpdateTutorialProgressionText()
@@ -2948,6 +2957,27 @@ public class GameManager : MonoBehaviour
         {
             winnerText.gameObject.SetActive(false);
         }
+        
+        // Wait a short time after winner announcement
+        yield return new WaitForSeconds(3f);
+        
+        // Do static transition and then reload scene
+        yield return StartCoroutine(ReloadSceneTransition());
+    }
+    
+    IEnumerator ReloadSceneTransition()
+    {
+        // Show static transition
+        if (StaticNoise != null)
+        {
+            StaticNoise.SetActive(true);
+        }
+        
+        // Wait for static transition duration
+        yield return new WaitForSeconds(staticNoiseDuration);
+        
+        // Reload the entire scene
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
     
     IEnumerator RainDownBlocks()
