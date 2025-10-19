@@ -445,7 +445,7 @@ public class GameManager : MonoBehaviour
         // Set the animator integer to the current tutorial instruction index
         if (tutorialAnimator != null)
         {
-            tutorialAnimator.SetInteger("tutorialIndex", currentTutorialInstructionIndex);
+            tutorialAnimator.SetInteger("cycle", currentTutorialInstructionIndex);
         }
     }
 

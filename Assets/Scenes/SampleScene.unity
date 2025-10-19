@@ -8661,6 +8661,7 @@ MonoBehaviour:
   rightArrow: {fileID: 1298826167}
   tutorialProgressionText: {fileID: 532128955}
   runGameText: {fileID: 388640465}
+  tutorialAnimator: {fileID: 420770915}
   player1SpawnParticlePrefab: {fileID: 9187312469296939557, guid: d9a96ba5d94deb24ebe1426946ff8b0a, type: 3}
   player2SpawnParticlePrefab: {fileID: 1314319562712154280, guid: afe10fcd4386346419b30a2ef672fe56, type: 3}
   blocksPlacedText: {fileID: 888171412}
@@ -8675,7 +8676,7 @@ MonoBehaviour:
   isMakingSelection: 0
   player1SelectedBlock: {fileID: 0}
   player2SelectedBlock: {fileID: 0}
-  player1Points: 14
+  player1Points: 0
   player2Points: 0
 --- !u!114 &486515032
 MonoBehaviour:
@@ -16210,7 +16211,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 2
-  m_Sprite: {fileID: 8561298419639213571, guid: ddaae66506439df40992c0a3d265ee05, type: 3}
+  m_Sprite: {fileID: -3217231424622771009, guid: e2380b3d0f61d5246901fc328ec2a229, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -32979,7 +32980,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 2
-  m_Sprite: {fileID: 8561298419639213571, guid: ddaae66506439df40992c0a3d265ee05, type: 3}
+  m_Sprite: {fileID: 4823231252079155072, guid: 1ec08927c091b1f4eb50e89ad673a55f, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
